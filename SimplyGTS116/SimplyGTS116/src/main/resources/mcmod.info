@@ -1,0 +1,16 @@
+[
+{
+  "modid": "simplygts",
+  "name": "SimplyGTS",
+  "description": "GTS but as we want it.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Varijon"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
