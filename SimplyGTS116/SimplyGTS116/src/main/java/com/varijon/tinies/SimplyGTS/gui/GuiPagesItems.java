@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.pixelmonmod.pixelmon.Pixelmon;
+import com.pixelmonmod.pixelmon.api.economy.BankAccount;
+import com.pixelmonmod.pixelmon.api.economy.BankAccountProxy;
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import com.pixelmonmod.pixelmon.api.storage.PartyStorage;
 import com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage;
@@ -68,7 +70,7 @@ public class GuiPagesItems
 									}
 									else
 									{									
-										UIManager.openUIForcefully(action.getPlayer(), getBuyConfirmMenuItems(action.getButton().getDisplay(), (int) itemListing.getListingPrice(), itemListing.getListingID(), page,action.getPlayer()));								
+										UIManager.openUIForcefully(action.getPlayer(), getBuyConfirmMenuItems((int) itemListing.getListingPrice(), itemListing.getListingID(), page,action.getPlayer()));								
 									}
 								}
 								else
@@ -145,7 +147,7 @@ public class GuiPagesItems
         return pageBuilder;
 	}
 	
-	public static GooeyPage getBuyConfirmMenuItems(ItemStack displayItem, int cost, UUID listingID, int page, ServerPlayerEntity player)
+	public static GooeyPage getBuyConfirmMenuItems(int cost, UUID listingID, int page, ServerPlayerEntity player)
 	{
 		GooeyButton emptySlot = GooeyButton.builder()
                 .display(new ItemStack(Blocks.WHITE_STAINED_GLASS_PANE,1))
@@ -169,8 +171,9 @@ public class GuiPagesItems
         			if(gtsListingItem.getListingStatus() == EnumListingStatus.Active)
         			{
         				PlayerPartyStorage partyBuyer = StorageProxy.getParty(action.getPlayer());
+        				BankAccount accountBuyer = BankAccountProxy.getBankAccount(action.getPlayer()).orElse(null);
         				
-        				if(partyBuyer.hasBalance(cost))
+        				if(accountBuyer.hasBalance(cost))
         				{               					
         				}
         				else
@@ -188,11 +191,12 @@ public class GuiPagesItems
             			}
         				else
         				{
-        					double oldBalBuyer = partyBuyer.getBalance().doubleValue();
-        					partyBuyer.take(cost);
-        					partyBuyer.updatePlayer(); 					
+        					double oldBalBuyer = accountBuyer.getBalance().doubleValue();
+        					accountBuyer.take(cost);
+        					accountBuyer.updatePlayer(); 					
             				
             				PlayerPartyStorage partyReceiver = StorageProxy.getParty(gtsListingItem.getListingOwner());
+            				BankAccount accountReceiver = BankAccountProxy.getBankAccount(gtsListingItem.getListingOwner()).orElse(null);
             				
             				String sellerName = UsernameCache.getLastKnownUsername(partyReceiver.getPlayerUUID());
 
@@ -207,10 +211,10 @@ public class GuiPagesItems
 								buyerName = "Someone";
 							}
             				
-            				double oldBalSeller = partyReceiver.getBalance().doubleValue();
-            				partyReceiver.add(cost);
+            				double oldBalSeller = accountReceiver.getBalance().doubleValue();
+            				accountReceiver.add(cost - ((int)(cost * GTSDataManager.getConfig().getGeneralTax())));
         					SimplyGTS.logger.info(buyerName + " bought " + gtsListingItem.getItemCount() + "x " + gtsListingItem.getItemName() + " from " + sellerName + " for " + gtsListingItem.getListingPrice());               
-        					SimplyGTS.logger.info(buyerName + " oldBal: " + oldBalBuyer + " newBal: " + partyBuyer.getBalance().doubleValue() + " -- " + sellerName + " oldBal: " + oldBalSeller + " newBal: " + partyReceiver.getBalance().doubleValue());
+        					SimplyGTS.logger.info(buyerName + " oldBal: " + oldBalBuyer + " newBal: " + accountBuyer.getBalance().doubleValue() + " -- " + sellerName + " oldBal: " + oldBalSeller + " newBal: " + accountReceiver.getBalance().doubleValue());
 //            				if(partyReceiver.getPlayer() != null)
 //            				{
 //            					TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
@@ -219,7 +223,7 @@ public class GuiPagesItems
 //            					chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + cost + TextFormatting.GREEN + "!" ));
 //            					partyReceiver.getPlayer().sendMessage(chatTrans);	
 //            				}
-            				partyReceiver.updatePlayer();
+        					accountReceiver.updatePlayer();
 
             				UIManager.closeUI(action.getPlayer());
 

@@ -1,5 +1,14 @@
 package com.varijon.tinies.SimplyGTS.util;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.Period;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.pokemon.item.pokeball.PokeBall;
 import com.pixelmonmod.pixelmon.api.pokemon.stats.BattleStatsType;
@@ -12,6 +21,9 @@ import com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
 import com.pixelmonmod.pixelmon.api.util.helpers.SpriteItemHelper;
 import com.pixelmonmod.pixelmon.battles.attacks.Attack;
+import com.varijon.tinies.SimplyGTS.object.GTSListingPokemon;
+import com.varijon.tinies.SimplyGTS.object.ItemConfigMinPrice;
+import com.varijon.tinies.SimplyGTS.storage.GTSDataManager;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Item;
@@ -31,10 +43,12 @@ import net.minecraftforge.common.util.Constants;
 
 public class Util 
 {
-	
 
-	public static TranslationTextComponent getHoverText(Pokemon pixelmon, ServerPlayerEntity player)
+	private static final Pattern periodPattern = Pattern.compile("([0-9]+)([hdwmy])");
+
+	public static TranslationTextComponent getHoverText(GTSListingPokemon gtsListingPokemon, ServerPlayerEntity player)
 	{
+		Pokemon pixelmon = gtsListingPokemon.createOrGetPokemonData();
 		if (pixelmon != null)
 		{
 			String pixelmonName = pixelmon.getStats().getPokemon().getSpecies().getName();
@@ -132,7 +146,7 @@ public class Util
 			}
 			
 			
-			loreList.add(StringNBT.valueOf(TextFormatting.BLUE + "Gender: " + TextFormatting.GREEN + pixelmonGender));
+			loreList.add(StringNBT.valueOf(TextFormatting.BLUE + "Gender: " + TextFormatting.GREEN + pixelmonGender + TextFormatting.WHITE + " (" + (gtsListingPokemon.isSoldAsBreedable() ? TextFormatting.AQUA + "Breedable" : TextFormatting.RED + "Unbreedable")  + TextFormatting.WHITE + ")" ));
 			String auraParticle = "";
 			if(pixelmon.getPersistentData().contains("entity-particles:particle"))
 			{
@@ -256,7 +270,7 @@ public class Util
 		}
 		if(!pixelmon.isDefaultForm())
 		{
-			sb.append("-" + pixelmon.getForm().getLocalizedName());
+			sb.append("-" + StringUtils.capitalize(pixelmon.getForm().getLocalizedName().split("-")[0]));
 		}
 		if(!pixelmon.isDefaultPalette())
 		{
@@ -289,197 +303,6 @@ public class Util
 		return "None";
 	}
 	
-	public static TranslationTextComponent getHoverText(int partySlot, ServerPlayerEntity player, boolean toAll) 
-	{
-		PlayerPartyStorage playerStorage =  StorageProxy.getParty(player);
-		
-		int partyNumber = partySlot - 1;
-		
-		Pokemon pixelmon = playerStorage.get(partyNumber);
-		if (pixelmon != null)
-		{		
-			String pixelmonName = pixelmon.getStats().getPokemon().getSpecies().getName();
-			String pixelmonNickname = TextFormatting.stripFormatting(pixelmon.getNickname());
-			String pixelmonAbility = pixelmon.getAbility().getLocalizedName();
-			String pixelmonGender = pixelmon.getGender().getLocalizedName();
-			String pixelmonGrowth = pixelmon.getGrowth().name();
-			String pixelmonNature = pixelmon.getNature().name();
-			String pixelmonOT = pixelmon.getOriginalTrainer();
-			PokeBall pixelmonPokeball = pixelmon.getBall();
-			int pixelmonFriendship = pixelmon.getFriendship();
-			int pixelmonLevel = pixelmon.getPokemonLevel(); 
-			String pixelmonHeldItem = getHeldItem(pixelmon);
-			String pixelmonShiny = getShiny(pixelmon.isShiny());
-//			String pixelmonCustomTexture = StringUtils.capitalize(pixelmon.get);
-//			String pixelmonSpecialTexture = getSpecialTexture(pixelmon);
-//			String pixelmonRegionalForm = getRegionalForm(pixelmon);
-			
-			if(pixelmon.isEgg())
-			{
-				pixelmonName += " Egg";
-				pixelmonAbility = "???";
-				pixelmonGender = "???";
-				pixelmonGrowth = "???";
-				pixelmonNature = "???";
-				pixelmonShiny = "???";
-			}
-					
-			int pixelmonIVHP = pixelmon.getStats().getIVs().getStat(BattleStatsType.HP);
-			int pixelmonIVAttack = pixelmon.getStats().getIVs().getStat(BattleStatsType.ATTACK);
-			int pixelmonIVDefense = pixelmon.getStats().getIVs().getStat(BattleStatsType.DEFENSE);
-			int pixelmonIVSpAtt = pixelmon.getStats().getIVs().getStat(BattleStatsType.SPECIAL_ATTACK);
-			int pixelmonIVSpDef = pixelmon.getStats().getIVs().getStat(BattleStatsType.SPECIAL_DEFENSE);
-			int pixelmonIVSpeed = pixelmon.getStats().getIVs().getStat(BattleStatsType.SPEED);
-			
-			int pixelmonEVHP = pixelmon.getStats().getEVs().getStat(BattleStatsType.HP);
-			int pixelmonEVAttack = pixelmon.getStats().getEVs().getStat(BattleStatsType.ATTACK);
-			int pixelmonEVDefense = pixelmon.getStats().getEVs().getStat(BattleStatsType.DEFENSE);
-			int pixelmonEVSpAtt = pixelmon.getStats().getEVs().getStat(BattleStatsType.SPECIAL_ATTACK);
-			int pixelmonEVSpDef = pixelmon.getStats().getEVs().getStat(BattleStatsType.SPECIAL_DEFENSE);
-			int pixelmonEVSpeed = pixelmon.getStats().getEVs().getStat(BattleStatsType.SPEED);
-			
-			
-			int pixelmonStatsHP = pixelmon.getStats().getHP();
-			int pixelmonStatsAttack = pixelmon.getStats().getAttack();
-			int pixelmonStatsDefense = pixelmon.getStats().getDefense();
-			int pixelmonStatsSpAtt = pixelmon.getStats().getSpecialAttack();
-			int pixelmonStatsSpDef = pixelmon.getStats().getSpecialDefense();
-			int pixelmonStatsSpeed = pixelmon.getStats().getSpeed();
-			
-			Moveset pixelmonMoves = pixelmon.getMoveset();
-			
-			String megaForm = "";
-			String formSuffix = getFormSuffix(pixelmon).replace("-", "");
-			
-			if(pixelmon.isMega())
-			{
-				StringBuilder sb = new StringBuilder();
-				sb.append((pixelmon.isShiny() ? TextFormatting.YELLOW : TextFormatting.GOLD) + "Mega ");
-				sb.append(pixelmonName);
-				megaForm = sb.toString();
-			}
-			String auraParticle = "";
-			if(pixelmon.getPersistentData().contains("entity-particles:particle"))
-			{
-				auraParticle = pixelmon.getPersistentData().getString("entity-particles:particle");
-			}
-			
-			String extraStats = "";
-			if(pixelmon.getExtraStats() instanceof MewStats)
-			{
-				extraStats = "Times Cloned: " + ((MewStats) pixelmon.getExtraStats()).numCloned;
-			}
-			if(pixelmon.getExtraStats() instanceof LakeTrioStats)
-			{
-				extraStats = "Rubies Extracted: " + ((LakeTrioStats) pixelmon.getExtraStats()).numEnchanted;
-			}
-			
-			if(checkForHiddenAbility(pixelmon) && !pixelmon.isEgg())
-			{
-				pixelmonAbility += TextFormatting.WHITE + " (" + TextFormatting.GOLD + "HA" + TextFormatting.WHITE + ")";
-			}
-					
-	        TranslationTextComponent info = new TranslationTextComponent("[Info]", new Object[0]);
-	        info.getStyle().withColor(TextFormatting.RED).withHoverEvent(
-	        		new HoverEvent(HoverEvent.Action.SHOW_TEXT, 
-	        				new StringTextComponent(
-	        						"" + TextFormatting.DARK_GREEN + TextFormatting.UNDERLINE + (pixelmonNickname == null ? pixelmonName : pixelmonNickname) 
-	        						+ (pixelmon.isShiny() ? new StringBuilder().append(TextFormatting.YELLOW).append("\u2605").toString() : "") + "\n" 
-	        						+ TextFormatting.AQUA + "Level: " + pixelmonLevel + "\n" 
-	        						+ TextFormatting.YELLOW + "Nature: " + pixelmonNature + getMintNature(pixelmon) + "\n" 	        						
-	        						+ TextFormatting.GREEN + "Growth: " + pixelmonGrowth + "\n" 
-	        						+ TextFormatting.GOLD + "Ability: " + pixelmonAbility + "\n" 
-	        						+ TextFormatting.LIGHT_PURPLE + "Gender: " + pixelmonGender + "\n" 
-	        						+ TextFormatting.DARK_PURPLE + "OT: " + pixelmonOT + "\n" 
-	        						+ TextFormatting.RED + "Item: " + pixelmonHeldItem
-	        						)
-	        				)
-	        		);
-	
-	        TranslationTextComponent ivs = new TranslationTextComponent("[IVs]", new Object[0]);
-	        ivs.getStyle().withColor(TextFormatting.LIGHT_PURPLE).withHoverEvent(
-	        		new HoverEvent(HoverEvent.Action.SHOW_TEXT, 
-	        				new StringTextComponent(
-			        				"" + TextFormatting.LIGHT_PURPLE + TextFormatting.UNDERLINE + "IVs" + "\n" 
-			        				+ TextFormatting.LIGHT_PURPLE + "HP: " + pixelmonIVHP + (pixelmon.getIVs().isHyperTrained(BattleStatsType.HP) ? TextFormatting.WHITE + " (" + TextFormatting.AQUA + "HT" + TextFormatting.WHITE + ")" : "") + "\n" 
-			        				+ TextFormatting.LIGHT_PURPLE + "Attack: " + pixelmonIVAttack + (pixelmon.getIVs().isHyperTrained(BattleStatsType.ATTACK) ? TextFormatting.WHITE + " (" + TextFormatting.AQUA + "HT" + TextFormatting.WHITE + ")" : "") + "\n" 
-			        				+ TextFormatting.LIGHT_PURPLE + "Defence: " + pixelmonIVDefense + (pixelmon.getIVs().isHyperTrained(BattleStatsType.DEFENSE) ? TextFormatting.WHITE + " (" + TextFormatting.AQUA + "HT" + TextFormatting.WHITE + ")" : "") + "\n" 
-			        				+ TextFormatting.LIGHT_PURPLE + "Sp. Attack: " + pixelmonIVSpAtt + (pixelmon.getIVs().isHyperTrained(BattleStatsType.SPECIAL_ATTACK) ? TextFormatting.WHITE + " (" + TextFormatting.AQUA + "HT" + TextFormatting.WHITE + ")" : "") + "\n" 
-			        				+ TextFormatting.LIGHT_PURPLE + "Sp. Defence: " + pixelmonIVSpDef + (pixelmon.getIVs().isHyperTrained(BattleStatsType.SPECIAL_DEFENSE) ? TextFormatting.WHITE + " (" + TextFormatting.AQUA + "HT" + TextFormatting.WHITE + ")" : "") + "\n" 
-			        				+ TextFormatting.LIGHT_PURPLE + "Speed: " + pixelmonIVSpeed + (pixelmon.getIVs().isHyperTrained(BattleStatsType.SPEED) ? TextFormatting.WHITE + " (" + TextFormatting.AQUA + "HT" + TextFormatting.WHITE + ")" : "")
-			        				)
-	        				)
-	        		);
-			TranslationTextComponent evs = new TranslationTextComponent("[EVs]", new Object[0]);
-	        evs.getStyle().withColor(TextFormatting.GOLD).withHoverEvent(
-	        		new HoverEvent(HoverEvent.Action.SHOW_TEXT, 
-	        				new StringTextComponent(
-	        						"" + TextFormatting.GOLD + TextFormatting.UNDERLINE + "EVs" + "\n" 
-	        						+ TextFormatting.GOLD + "HP: " + pixelmonEVHP + "\n" 
-	        						+ TextFormatting.GOLD + "Attack: " + pixelmonEVAttack + "\n" 
-	        						+ TextFormatting.GOLD + "Defence: " + pixelmonEVDefense + "\n" 
-	        						+ TextFormatting.GOLD + "Sp. Attack: " + pixelmonEVSpAtt + "\n" 
-	        						+ TextFormatting.GOLD + "Sp. Defence: " + pixelmonEVSpDef + "\n"
-	        						+ TextFormatting.GOLD + "Speed: " + pixelmonEVSpeed
-	        						)
-	        				)
-	        		);
-	        StringBuilder moveString = new StringBuilder();
-	        moveString.append("" + TextFormatting.BLUE + TextFormatting.UNDERLINE + "Moves");
-	        if(!pixelmon.isEgg())
-			{
-				for(Attack move : pixelmonMoves)
-				{
-					moveString.append("\n" + TextFormatting.BLUE + move.getActualMove().getLocalizedName());
-				}
-			}
-			else
-			{
-				moveString.append("\n" + TextFormatting.BLUE + "???");
-			}
-	        
-	        TranslationTextComponent moves = new TranslationTextComponent("[Moves]", new Object[0]);
-	        moves.getStyle().withColor(TextFormatting.BLUE).withHoverEvent(
-	        		new HoverEvent(HoverEvent.Action.SHOW_TEXT, 
-	        				new StringTextComponent(moveString.toString())
-	        				)
-	        		);
-	        
-	        TranslationTextComponent extra = new TranslationTextComponent("[Extra]", new Object[0]);
-	        extra.getStyle().withColor(TextFormatting.DARK_AQUA).withHoverEvent(
-	        		new HoverEvent(HoverEvent.Action.SHOW_TEXT, 
-	        				new StringTextComponent(
-	        						"" + TextFormatting.DARK_AQUA + TextFormatting.UNDERLINE + "Extra" + "\n" 
-	        						+ TextFormatting.GOLD + "Pokeball: " + pixelmonPokeball.getName()
-	        						+ (!megaForm.equals("") ? "\n" + TextFormatting.RED + "Mega: " + megaForm : "")
-	    	        				+ (!formSuffix.equals("") ? "\n" +  TextFormatting.GREEN + "Form: " + formSuffix: "") 
-//	        						+ (!pixelmonCustomTexture.equals("") ? "\n" +  TextFormatting.AQUA + "Texture: " + pixelmonCustomTexture: "") 
-	        						+ (!auraParticle.equals("") ? "\n" +  TextFormatting.YELLOW + "Aura: " + auraParticle : "")
-	        						+ (!extraStats.equals("") ? "\n" +  TextFormatting.BLUE + extraStats : "")  
-	        						)
-	        				)
-	        		);
-	        
-	        TranslationTextComponent chatTransFinal = new TranslationTextComponent("", new Object());
-	        if(toAll)
-	        {
-		        chatTransFinal.append(new StringTextComponent(TextFormatting.AQUA + player.getName().getString() + "'s Pokemon " + TextFormatting.GRAY + "(" + TextFormatting.GOLD + "To All" + TextFormatting.GRAY + ")\n"));	        	
-	        }
-	        else
-	        {
-		        chatTransFinal.append(new StringTextComponent(TextFormatting.AQUA + player.getName().getString() + "'s Pokemon " + TextFormatting.GRAY + "(" + TextFormatting.GOLD + "To You" + TextFormatting.GRAY + ")\n"));	        	
-	        }
-	        chatTransFinal.append(new TranslationTextComponent(
-	        		TextFormatting.GREEN + ((pixelmon.isShiny() ? TextFormatting.YELLOW + pixelmonName + new StringBuilder().append(TextFormatting.YELLOW).append("\u2605").toString() : ""  + TextFormatting.GREEN + pixelmonName) 
-	        		+ " " + "%s" + " " + "%s" + " " + "%s" + " " + "%s" + " " + "%s"), new Object[]{info, evs, ivs, moves, extra}));
-	        return chatTransFinal;
-		}
-		else
-		{
-			return null;
-		}
-        
-    }
 	public static TextFormatting colorIV(int pIV)
 	{
 		if(pIV < 6)
@@ -509,6 +332,165 @@ public class Util
 		return TextFormatting.GRAY;
 	}
 	
+	public static int calculateMinimumPriceItem(ItemStack item)
+	{
+		int finalPrice = 0;
+		
+		for(ItemConfigMinPrice itemConfig : GTSDataManager.getConfig().getLstMinItemPrices())
+		{
+			if(itemConfig.getItemName().equals(item.getItem().getRegistryName().toString()))
+			{
+				if(item.hasTag())
+				{
+					if(!item.getTag().toString().equals(itemConfig.getItemNBT()))
+					{
+						continue;
+					}
+					if(itemConfig.getItemMeta() == -1)
+					{
+						finalPrice += itemConfig.getMinPrice();
+					}
+					if(itemConfig.getItemMeta() == item.getDamageValue())
+					{
+						finalPrice += itemConfig.getMinPrice();
+					}
+				}
+				else
+				{
+					if(itemConfig.getItemMeta() == -1)
+					{
+						finalPrice += itemConfig.getMinPrice();
+					}
+					if(itemConfig.getItemMeta() == item.getDamageValue())
+					{
+						finalPrice += itemConfig.getMinPrice();
+					}
+				}
+			}
+		}
+//		ShopItemWithVariation shopItem = null;
+//		for(ShopkeeperData shopData : ServerNPCRegistry.getEnglishShopkeepers())
+//		{
+//			for(ShopItemWithVariation shopItemVar : shopData.getItemList())
+//			{
+//				if(shopItemVar.getItemStack().getItem() == item.getItem())
+//				{
+//					if(item.getMetadata() == shopItemVar.getItemStack().getMetadata())
+//					{
+//						if(item.hasTagCompound() && shopItemVar.getItemStack().hasTagCompound())
+//						{
+//							if(item.getTagCompound().hasKey("tm"))
+//							{
+//								if(item.getTagCompound().getInteger("tm") == shopItemVar.getItemStack().getTagCompound().getInteger("tm"))
+//								{
+//									shopItem = shopItemVar;
+//									break;
+//								}
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//		if(shopItem != null)
+//		{
+//			finalPrice += shopItem.getBuyCost() / 4;
+//		}
+		return finalPrice;
+	}
+	public static int calculateMinimumPricePokemon(Pokemon pokemon, boolean sellAsBreedable)
+	{
+		int finalPrice = 0;
+		if(Util.checkForHiddenAbility(pokemon))
+		{
+			finalPrice+= GTSDataManager.getConfig().getMinHAPrice();
+		}
+		int pixelmonIVHP = pokemon.getStats().getIVs().getStat(BattleStatsType.HP);
+		int pixelmonIVAttack = pokemon.getStats().getIVs().getStat(BattleStatsType.ATTACK);
+		int pixelmonIVDefense = pokemon.getStats().getIVs().getStat(BattleStatsType.DEFENSE);
+		int pixelmonIVSpAtt = pokemon.getStats().getIVs().getStat(BattleStatsType.SPECIAL_ATTACK);
+		int pixelmonIVSpDef = pokemon.getStats().getIVs().getStat(BattleStatsType.SPECIAL_DEFENSE);
+		int pixelmonIVSpeed = pokemon.getStats().getIVs().getStat(BattleStatsType.SPEED);
+		
+		int maxIVCount = 0;
+		if(pixelmonIVHP == 31)
+		{
+			maxIVCount++;
+		}
+		if(pixelmonIVAttack == 31)
+		{
+			maxIVCount++;
+		}
+		if(pixelmonIVDefense == 31)
+		{
+			maxIVCount++;
+		}
+		if(pixelmonIVSpAtt == 31)
+		{
+			maxIVCount++;
+		}
+		if(pixelmonIVSpDef == 31)
+		{
+			maxIVCount++;
+		}
+		if(pixelmonIVSpeed == 31)
+		{
+			maxIVCount++;
+		}
+		if(maxIVCount > 2)
+		{
+			switch(maxIVCount)
+			{
+				case(3):
+					finalPrice+= GTSDataManager.getConfig().getMinPrice3IV();
+					break;
+				case(4):
+					finalPrice+= GTSDataManager.getConfig().getMinPrice4IV();
+					break;
+				case(5):
+					finalPrice+= GTSDataManager.getConfig().getMinPrice5IV();
+					break;
+				case(6):
+					finalPrice+= GTSDataManager.getConfig().getMinPrice6IV();
+					break;
+			}
+		}
+		if(sellAsBreedable)
+		{
+			finalPrice *= GTSDataManager.getConfig().getBreedablePriceMultiplier();
+		}
+		if(finalPrice == 0)
+		{
+			finalPrice = 100;
+		}
+		
+		return finalPrice;
+	}
 	
+	public static long parsePeriod(String period)
+	{
+	    period = period.toLowerCase(Locale.ENGLISH);
+	    Matcher matcher = periodPattern.matcher(period);
+	    Instant instant=Instant.EPOCH;
+	    while(matcher.find()){
+	        int num = Integer.parseInt(matcher.group(1));
+	        String typ = matcher.group(2);
+	        switch (typ) {
+	        	case "m":
+	        		instant=instant.plus(Duration.ofMinutes(num));
+	        		break;
+	            case "h":
+	                instant=instant.plus(Duration.ofHours(num));
+	                break;
+	            case "d":
+	                instant=instant.plus(Duration.ofDays(num));
+	                break;
+	            case "w":
+	                instant=instant.plus(Period.ofWeeks(num));
+	                break;
+	        }
+	    }
+	    return instant.toEpochMilli();
+	}
 	
 }

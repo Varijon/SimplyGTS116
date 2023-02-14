@@ -122,14 +122,15 @@ public class GTSDataManager
 			{
 				dir.mkdirs();
 			}
-			if(dir.listFiles().length == 0)
+			File config = new File(source + "/config.json");
+			if(!config.exists())
 			{
 				ArrayList<ItemConfigMinPrice> lstExampleMinPrice = new ArrayList<>();
 				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.destiny_knot.getRegistryName().toString(), 50000, 0, ""));
 				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.ever_stone.getRegistryName().toString(), 50000, 0, ""));
 				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.mint_adamant.getRegistryName().toString(), 50000, -1, ""));
 				
-				GTSConfig gtsConfig = new GTSConfig(0, 0, 30000, 40000, 50000, 50000, 1000000, 50000, "3d", 8, lstExampleMinPrice);
+				GTSConfig gtsConfig = new GTSConfig(0, 0, 30000, 40000, 50000, 50000, 1000000, 50000, "3d", 8, 2.0, 0.20, 0.05,lstExampleMinPrice);
 		
 				Gson gson = new GsonBuilder().setPrettyPrinting().create();
 					

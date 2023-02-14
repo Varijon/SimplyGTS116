@@ -12,13 +12,15 @@ import net.minecraft.nbt.JsonToNBT;
 public class GTSListingPokemon extends GTSListing
 {
 	String pokemonNBTData;
+	boolean soldAsBreedable;
 	transient Pokemon pokemonData;
 	
 	public GTSListingPokemon(EnumListingType listingType, EnumListingStatus listingStatus, long listingStart,
-			long listingEnd, int listingPrice, UUID listingOwner, UUID listingID, String pokemonNBTData) 
+			long listingEnd, int listingPrice, UUID listingOwner, UUID listingID, String pokemonNBTData, boolean soldAsBreedable) 
 	{
 		super(listingType, listingStatus, listingStart, listingEnd, listingPrice, listingOwner, listingID, listingID);
 		this.pokemonNBTData = pokemonNBTData;
+		this.soldAsBreedable = soldAsBreedable;
 	}
 
 	public Pokemon createOrGetPokemonData()
@@ -53,6 +55,14 @@ public class GTSListingPokemon extends GTSListing
 
 	public void setPokemonData(Pokemon pokemonData) {
 		this.pokemonData = pokemonData;
+	}
+
+	public boolean isSoldAsBreedable() {
+		return soldAsBreedable;
+	}
+
+	public void setSoldAsBreedable(boolean soldAsBreedable) {
+		this.soldAsBreedable = soldAsBreedable;
 	}
 	
 	

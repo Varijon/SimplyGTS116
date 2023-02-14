@@ -12,12 +12,15 @@ public class GTSConfig
 	int minPrice6IV;
 	int minHAPrice;
 	int maxPrice;
+	double breedablePriceMultiplier;
+	double breedablePokemonTax;
+	double generalTax;
 	String listingDuration;
 	int maxPlayerListings;
 	ArrayList<ItemConfigMinPrice> lstMinItemPrices;
 	
 	public GTSConfig(int minPrice1IV, int minPrice2IV, int minPrice3IV, int minPrice4IV, int minPrice5IV,
-			int minPrice6IV, int maxPrice, int minHAPrice, String listingDuration, int maxPlayerListings,
+			int minPrice6IV, int maxPrice, int minHAPrice, String listingDuration, int maxPlayerListings, double breedablePriceMultiplier, double breedablePokemonTax, double generalTax,
 			ArrayList<ItemConfigMinPrice> lstMinItemPrices) {
 		super();
 		this.minPrice1IV = minPrice1IV;
@@ -28,6 +31,9 @@ public class GTSConfig
 		this.minPrice6IV = minPrice6IV;
 		this.minHAPrice = minHAPrice;
 		this.maxPrice = maxPrice;
+		this.breedablePriceMultiplier = breedablePriceMultiplier;
+		this.breedablePokemonTax = breedablePokemonTax;
+		this.generalTax = generalTax;
 		this.listingDuration = listingDuration;
 		this.maxPlayerListings = maxPlayerListings;
 		this.lstMinItemPrices = lstMinItemPrices;
@@ -119,6 +125,30 @@ public class GTSConfig
 
 	public void setLstMinItemPrices(ArrayList<ItemConfigMinPrice> lstMinItemPrices) {
 		this.lstMinItemPrices = lstMinItemPrices;
+	}
+
+	public double getBreedablePriceMultiplier() {
+		return breedablePriceMultiplier;
+	}
+
+	public void setBreedablePriceMultiplier(double breedablePriceMultiplier) {
+		this.breedablePriceMultiplier = breedablePriceMultiplier;
+	}
+
+	public double getBreedablePokemonTax() {
+		return breedablePokemonTax;
+	}
+
+	public void setBreedablePokemonTax(double breedablePokemonTax) {
+		this.breedablePokemonTax = breedablePokemonTax;
+	}
+
+	public double getGeneralTax() {
+		return generalTax;
+	}
+
+	public void setGeneralTax(double generalTax) {
+		this.generalTax = generalTax;
 	}
 	
 	

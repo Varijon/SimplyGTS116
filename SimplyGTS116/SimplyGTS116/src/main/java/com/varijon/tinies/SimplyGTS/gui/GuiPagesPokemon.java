@@ -3,6 +3,9 @@ package com.varijon.tinies.SimplyGTS.gui;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import com.pixelmonmod.pixelmon.api.economy.BankAccount;
+import com.pixelmonmod.pixelmon.api.economy.BankAccountProxy;
+import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
 import com.pixelmonmod.pixelmon.api.util.helpers.SpriteItemHelper;
@@ -63,7 +66,7 @@ public class GuiPagesPokemon
 									}
 									else
 									{									
-										UIManager.openUIForcefully(action.getPlayer(), getBuyConfirmMenuPokemon(action.getButton().getDisplay(), (int) pokemonListing.getListingPrice(), pokemonListing.getListingID(), page, action.getPlayer()));								
+										UIManager.openUIForcefully(action.getPlayer(), getBuyConfirmMenuPokemon((int) pokemonListing.getListingPrice(), pokemonListing.getListingID(), page, action.getPlayer()));								
 									}
 								}
 								else
@@ -140,7 +143,7 @@ public class GuiPagesPokemon
         return pageBuilder;
 	}
 	
-	public static GooeyPage getBuyConfirmMenuPokemon(ItemStack displayItem, int cost, UUID listingID, int page, ServerPlayerEntity player)
+	public static GooeyPage getBuyConfirmMenuPokemon(int cost, UUID listingID, int page, ServerPlayerEntity player)
 	{
 		GooeyButton emptySlot = GooeyButton.builder()
                 .display(new ItemStack(Blocks.WHITE_STAINED_GLASS_PANE,1))
@@ -163,14 +166,14 @@ public class GuiPagesPokemon
         			if(gtsListingPokemon.getListingStatus() == EnumListingStatus.Active)
         			{
         				PlayerPartyStorage partyBuyer = StorageProxy.getParty(action.getPlayer());
-        				
+        				BankAccount accountBuyer = BankAccountProxy.getBankAccount(action.getPlayer()).orElse(null);
 
-    					double oldBalBuyer = partyBuyer.getBalance().doubleValue();
+    					double oldBalBuyer = accountBuyer.getBalance().doubleValue();
         				
-        				if(partyBuyer.hasBalance(cost))
+        				if(accountBuyer.hasBalance(cost))
         				{
-        					partyBuyer.take(cost);
-        					partyBuyer.updatePlayer();                					
+        					accountBuyer.take(cost);
+        					accountBuyer.updatePlayer();                					
         				}
         				else
         				{
@@ -181,7 +184,8 @@ public class GuiPagesPokemon
         				}
 
 
-        				PlayerPartyStorage partyReceiver = StorageProxy.getParty(gtsListingPokemon.getListingOwner());       				
+        				PlayerPartyStorage partyReceiver = StorageProxy.getParty(gtsListingPokemon.getListingOwner());      
+        				BankAccount accountReceiver = BankAccountProxy.getBankAccount(gtsListingPokemon.getListingOwner()).orElse(null); 				
 
         				String sellerName = UsernameCache.getLastKnownUsername(partyReceiver.getPlayerUUID());
 
@@ -196,11 +200,19 @@ public class GuiPagesPokemon
 							buyerName = "Someone";
 						}
 
-        				double oldBalSeller = partyReceiver.getBalance().doubleValue();
-        				partyReceiver.add(cost);
+        				double oldBalSeller = accountReceiver.getBalance().doubleValue();
+        				double combinedTax = GTSDataManager.getConfig().getGeneralTax() + GTSDataManager.getConfig().getBreedablePokemonTax();
+        				if(gtsListingPokemon.isSoldAsBreedable())
+        				{
+            				accountReceiver.add(cost - ((int)(cost * combinedTax)));        					
+        				}
+        				else
+        				{
+        					accountReceiver.add(cost - ((int)(cost * GTSDataManager.getConfig().getGeneralTax())));
+        				}
         				
     					SimplyGTS.logger.info(buyerName + " bought " + gtsListingPokemon.createOrGetPokemonData().getDisplayName() + " from " + sellerName + " for " + gtsListingPokemon.getListingPrice());               
-    					SimplyGTS.logger.info(buyerName + " oldBal: " + oldBalBuyer + " newBal: " + partyBuyer.getBalance().doubleValue() + " -- " + sellerName + " oldBal: " + oldBalSeller + " newBal: " + partyReceiver.getBalance().doubleValue());
+    					SimplyGTS.logger.info(buyerName + " oldBal: " + oldBalBuyer + " newBal: " + accountBuyer.getBalance().doubleValue() + " -- " + sellerName + " oldBal: " + oldBalSeller + " newBal: " + accountReceiver.getBalance().doubleValue());
 
 //        				if(partyReceiver.getPlayer() != null)
 //        				{
@@ -210,19 +222,34 @@ public class GuiPagesPokemon
 //        					chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + cost + TextFormatting.GREEN + "!" ));
 //        					partyReceiver.getPlayer().sendMessage(chatTrans);	
 //        				}
-    					partyReceiver.updatePlayer();
+    					accountReceiver.updatePlayer();
 
         				UIManager.closeUI(action.getPlayer());
 
         				TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         				chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.GREEN + " You bought "));
-        				chatTrans.append(Util.getHoverText(gtsListingPokemon.createOrGetPokemonData(), action.getPlayer()));
+        				chatTrans.append(Util.getHoverText(gtsListingPokemon, action.getPlayer()));
         				chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + cost + TextFormatting.GREEN + "!" ));
         				action.getPlayer().sendMessage(chatTrans, UUID.randomUUID());	
 
-
-        				partyBuyer.add(gtsListingPokemon.createOrGetPokemonData());
+        				Pokemon pokemonToAdd = gtsListingPokemon.createOrGetPokemonData();
+        				if(!gtsListingPokemon.isSoldAsBreedable())
+        				{
+            				pokemonToAdd.addFlag("unbreedable"); 
+            				if(pokemonToAdd.hasFlag("gtsBreedable"))
+            				{
+            					pokemonToAdd.removeFlag("gtsBreedable");
+            					pokemonToAdd.getPersistentData().remove("currentOwner");
+            				}
+        				}
+        				else
+        				{
+        					pokemonToAdd.addFlag("gtsBreedable");
+        					pokemonToAdd.getPersistentData().putString("currentOwner", partyBuyer.getPlayerUUID().toString());
+        				}
+        				partyBuyer.add(pokemonToAdd);
         				partyBuyer.setNeedsSaving();
+        				partyBuyer.sendClientUpdatePacket()
         				gtsListingPokemon.setListingStatus(EnumListingStatus.Sold);
         				gtsListingPokemon.setListingBuyer(action.getPlayer().getUUID());
         				GTSDataManager.writeListingPokemonData(gtsListingPokemon);
@@ -270,7 +297,7 @@ public class GuiPagesPokemon
         				{
         					TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         					chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.RED + " Your listing for "));
-        					chatTrans.append(Util.getHoverText(gtsListingPokemon.createOrGetPokemonData(), action.getPlayer()));
+        					chatTrans.append(Util.getHoverText(gtsListingPokemon, action.getPlayer()));
         					chatTrans.append(new StringTextComponent(TextFormatting.RED + " was cancelled!" ));
         					action.getPlayer().sendMessage(chatTrans, UUID.randomUUID());	
         				}
@@ -279,7 +306,7 @@ public class GuiPagesPokemon
 
         				TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         				chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.GREEN + " Listing for "));
-        				chatTrans.append(Util.getHoverText(gtsListingPokemon.createOrGetPokemonData(), action.getPlayer()));
+        				chatTrans.append(Util.getHoverText(gtsListingPokemon, action.getPlayer()));
         				chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " cancelled!" ));
         				action.getPlayer().sendMessage(chatTrans, UUID.randomUUID());	
 
@@ -370,7 +397,7 @@ public class GuiPagesPokemon
 
         				TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         				chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.GREEN + " You cancelled your listing for "));
-        				chatTrans.append(Util.getHoverText(gtsListingPokemon.createOrGetPokemonData(), action.getPlayer()));
+        				chatTrans.append(Util.getHoverText(gtsListingPokemon, action.getPlayer()));
         				chatTrans.append(new StringTextComponent(TextFormatting.GREEN + "!" ));
         				action.getPlayer().sendMessage(chatTrans, UUID.randomUUID());	
 

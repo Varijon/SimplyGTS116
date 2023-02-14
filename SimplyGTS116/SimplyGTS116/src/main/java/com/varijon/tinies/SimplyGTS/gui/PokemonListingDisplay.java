@@ -138,7 +138,7 @@ public class PokemonListingDisplay
 			}
 			
 			
-			loreList.add(TextFormatting.BLUE + "Gender: " + TextFormatting.GREEN + pixelmonGender);
+			loreList.add(TextFormatting.BLUE + "Gender: " + TextFormatting.GREEN + pixelmonGender + TextFormatting.WHITE + " (" + (gtsListingPokemon.isSoldAsBreedable() ? TextFormatting.AQUA + "Breedable" : TextFormatting.RED + "Unbreedable")  + TextFormatting.WHITE + ")" );
 			String auraParticle = "";
 			if(pixelmon.getPersistentData().contains("entity-particles:particle"))
 			{

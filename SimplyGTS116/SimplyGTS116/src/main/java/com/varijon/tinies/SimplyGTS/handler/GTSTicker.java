@@ -69,8 +69,16 @@ public class GTSTicker
 							
 							TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         					chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "] " + TextFormatting.GOLD + playerName + TextFormatting.GREEN + " bought your "));
-        					chatTrans.append(Util.getHoverText(gtsListingPokemon.createOrGetPokemonData(), targetPlayer));
-        					chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + gtsListingPokemon.getListingPrice() + TextFormatting.GREEN + "!" ));
+        					chatTrans.append(Util.getHoverText(gtsListingPokemon, targetPlayer));
+        					if(gtsListingPokemon.isSoldAsBreedable())
+        					{
+                				double combinedTax = GTSDataManager.getConfig().getGeneralTax() + GTSDataManager.getConfig().getBreedablePokemonTax();
+            					chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + (gtsListingPokemon.getListingPrice() - ((int)(gtsListingPokemon.getListingPrice() * combinedTax))) + TextFormatting.GREEN + "!" ));        						
+        					}
+        					else
+        					{
+            					chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + (gtsListingPokemon.getListingPrice() - ((int)(gtsListingPokemon.getListingPrice() * GTSDataManager.getConfig().getGeneralTax()))) + TextFormatting.GREEN + "!" ));        						
+        					}
         					targetPlayer.sendMessage(chatTrans, UUID.randomUUID());	
 							lstPokemonListingRemoval.add(gtsListingPokemon);
 							continue;
@@ -89,7 +97,7 @@ public class GTSTicker
 	        				}
 							TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
 							chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.GREEN + " Your listing for "));
-							chatTrans.append(Util.getHoverText(gtsListingPokemon.createOrGetPokemonData(), targetPlayer));
+							chatTrans.append(Util.getHoverText(gtsListingPokemon, targetPlayer));
 							chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " has expired!" ));
 							targetPlayer.sendMessage(chatTrans, UUID.randomUUID());	
 	        				        				
@@ -124,7 +132,7 @@ public class GTSTicker
 							TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         					chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "] " + TextFormatting.GOLD + playerName + TextFormatting.GREEN + " bought your "+ TextFormatting.WHITE + gtsListingItem.getItemCount() + "x "));
             				chatTrans.append(gtsListingItem.getTextComponent());
-        					chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + gtsListingItem.getListingPrice() + TextFormatting.GREEN + "!" ));
+        					chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + (gtsListingItem.getListingPrice() - ((int)(gtsListingItem.getListingPrice() * GTSDataManager.getConfig().getGeneralTax()))) + TextFormatting.GREEN + "!" ));
         					targetPlayer.sendMessage(chatTrans, UUID.randomUUID());	
 							lstItemListingRemoval.add(gtsListingItem);
 							continue;
