@@ -1,7 +1,10 @@
 package com.varijon.tinies.SimplyGTS.gui;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.pixelmonmod.pixelmon.api.economy.BankAccount;
 import com.pixelmonmod.pixelmon.api.economy.BankAccountProxy;
@@ -11,6 +14,8 @@ import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
 import com.pixelmonmod.pixelmon.api.util.helpers.SpriteItemHelper;
 import com.varijon.tinies.SimplyGTS.SimplyGTS;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
+import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
+import com.varijon.tinies.SimplyGTS.object.GTSListingItem;
 import com.varijon.tinies.SimplyGTS.object.GTSListingPokemon;
 import com.varijon.tinies.SimplyGTS.storage.GTSDataManager;
 import com.varijon.tinies.SimplyGTS.util.Util;
@@ -32,18 +37,59 @@ import net.minecraftforge.server.permission.PermissionAPI;
 
 public class GuiPagesPokemon 
 {
-	public static GooeyPage getPokemonMenu(ArrayList<GTSListingPokemon> lstGTSListing, ServerPlayerEntity player, int page)
+	public static GooeyPage getPokemonMenu(ArrayList<GTSListingPokemon> lstGTSListing, ServerPlayerEntity player, int page, EnumSortingOption sort)
 	{
         ChestTemplate.Builder templateBuilder = ChestTemplate.builder(6);
+        
+        List<GTSListingPokemon> lstSortedGTSListing = null;
+        switch(sort)
+        {
+	        case AZ:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingPokemon::getPokemonName))
+	      		  .collect(Collectors.toList());
+	        	break;
+			case AZReversed:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingPokemon::getPokemonName).reversed())
+	      		  .collect(Collectors.toList());
+				break;
+			case Duration:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingPokemon::getListingTimeRemaining).reversed())
+	      		  .collect(Collectors.toList());
+				break;
+			case DurationReversed:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingPokemon::getListingTimeRemaining))
+	      		  .collect(Collectors.toList());
+				break;
+			case None:
+				lstSortedGTSListing = lstGTSListing;
+				break;
+			case Price:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingPokemon::getListingPrice))
+	      		  .collect(Collectors.toList());
+				break;
+			case PriceReversed:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingPokemon::getListingPrice).reversed())
+	      		  .collect(Collectors.toList());
+				break;
+			default:
+				break;
+        		
+        }
         
         int slotColumnCount = 0;
         int slotRowCount = 0;
         
-        for(int x = 0; x < lstGTSListing.size(); x++)
+        for(int x = 0; x < lstSortedGTSListing.size(); x++)
 		{
 			if(x >= (page-1) * 45 && x < page * 45)
 			{
-				GTSListingPokemon pokemonListing = lstGTSListing.get(x);
+				GTSListingPokemon pokemonListing = lstSortedGTSListing.get(x);
 				if(pokemonListing.getListingStatus() != EnumListingStatus.Active)
 				{
 					continue;
@@ -73,7 +119,7 @@ public class GuiPagesPokemon
 								{
 			        				UIManager.closeUI(action.getPlayer());
 			        				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-			        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+			        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, sort));
 								}
 							}
 						})
@@ -94,7 +140,7 @@ public class GuiPagesPokemon
                 .onClick((action) -> 
         		{
        				UIManager.closeUI(action.getPlayer());
-   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page-1));
+   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page-1, sort));
         		})
                 .build();
 
@@ -104,7 +150,7 @@ public class GuiPagesPokemon
                 .onClick((action) -> 
         		{
        				UIManager.closeUI(action.getPlayer());
-   					UIManager.openUIForcefully(action.getPlayer(), GuiPagesItems.getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), 1));
+   					UIManager.openUIForcefully(action.getPlayer(), GuiPagesItems.getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), 1, sort));
         		})
                 .build();
         
@@ -114,19 +160,53 @@ public class GuiPagesPokemon
                 .onClick((action) -> 
         		{
        				UIManager.closeUI(action.getPlayer());
-   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page+1));
+   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page+1, sort));
         		})
                 .build();
+        GooeyButton AZSortButton = GooeyButton.builder()
+                .display(Util.getButtonDisplay(EnumSortingOption.AZ, sort))
+                .title(TextFormatting.GOLD + Util.getSortTextAZ(sort))
+                .onClick((action) -> 
+        		{
+       				UIManager.closeUI(action.getPlayer());
+   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, Util.getReverseSortAZ(sort)));
+        		})
+                .build();   
+        GooeyButton DurationSortButton = GooeyButton.builder()
+                .display(Util.getButtonDisplay(EnumSortingOption.Duration,sort))
+                .title(TextFormatting.GOLD + Util.getSortTextDuration(sort))
+                .onClick((action) -> 
+        		{
+       				UIManager.closeUI(action.getPlayer());
+   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, Util.getReverseSortDuration(sort)));
+        		})
+                .build();   
+        GooeyButton PriceSortButton = GooeyButton.builder()
+                .display(Util.getButtonDisplay(EnumSortingOption.Price,sort))
+                .title(TextFormatting.GOLD + Util.getSortTextPrice(sort))
+                .onClick((action) -> 
+        		{
+       				UIManager.closeUI(action.getPlayer());
+   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, Util.getReverseSortPrice(sort)));
+        		})
+                .build();
+        
         if(page != 1)
         {
 	        templateBuilder
 	        	.set(5, 0, backPageButton)
-	        	.set(5, 4, switchToItemsButton)  
-	        	.set(5, 8, forwardPageButton);        	
+	        	.set(5, 1, PriceSortButton)
+	        	.set(5, 2, DurationSortButton)
+	        	.set(5, 3, AZSortButton)
+	        	.set(5, 4, switchToItemsButton)
+	        	.set(5, 8, forwardPageButton);
         }
         else
         {
             templateBuilder
+        		.set(5, 1, PriceSortButton)
+	        	.set(5, 2, DurationSortButton)
+        		.set(5, 3, AZSortButton)
         		.set(5, 4, switchToItemsButton)
             	.set(5, 8, forwardPageButton);
         }
@@ -160,7 +240,7 @@ public class GuiPagesPokemon
         			{
         				UIManager.closeUI(action.getPlayer());
         				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-    					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+    					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         				return;
         			}
         			if(gtsListingPokemon.getListingStatus() == EnumListingStatus.Active)
@@ -179,7 +259,7 @@ public class GuiPagesPokemon
         				{
         					UIManager.closeUI(action.getPlayer());
         					action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "You don't have enough money!"), UUID.randomUUID());
-        					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+        					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         					return;
         				}
 
@@ -249,20 +329,19 @@ public class GuiPagesPokemon
         				}
         				partyBuyer.add(pokemonToAdd);
         				partyBuyer.setNeedsSaving();
-        				partyBuyer.sendClientUpdatePacket()
         				gtsListingPokemon.setListingStatus(EnumListingStatus.Sold);
         				gtsListingPokemon.setListingBuyer(action.getPlayer().getUUID());
         				GTSDataManager.writeListingPokemonData(gtsListingPokemon);
 
 
 
-        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         			else
         			{
         				UIManager.closeUI(action.getPlayer());
         				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         		})
                 .build();
@@ -273,7 +352,7 @@ public class GuiPagesPokemon
                 .onClick((action) -> 
         		{
        				UIManager.closeUI(action.getPlayer());
-   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+   					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         		})
                 .build();
 		
@@ -287,7 +366,7 @@ public class GuiPagesPokemon
         			{
         				UIManager.closeUI(action.getPlayer());
         				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-    					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+    					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         				return;
         			}
         			if(gtsListingPokemon.getListingStatus() == EnumListingStatus.Active)
@@ -322,13 +401,13 @@ public class GuiPagesPokemon
         				GTSDataManager.writeListingPokemonData(gtsListingPokemon);
 
 
-        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         			else
         			{
         				UIManager.closeUI(action.getPlayer());
         				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));
+        				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         		})
                 .build();
@@ -384,7 +463,7 @@ public class GuiPagesPokemon
         				}
         				else
         				{
-        					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));        					
+        					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));        					
         				}
         				return;
         			}
@@ -414,7 +493,7 @@ public class GuiPagesPokemon
         				}
         				else
         				{
-            				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));        					
+            				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));        					
         				}
         			}
         			else
@@ -427,7 +506,7 @@ public class GuiPagesPokemon
         				}
         				else
         				{
-        					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));        					
+        					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));        					
         				}
         			}
         			
@@ -446,7 +525,7 @@ public class GuiPagesPokemon
     				}
     				else
     				{
-    					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page));        					
+    					UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));        					
     				}
         		})
                 .build();

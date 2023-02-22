@@ -32,6 +32,7 @@ import com.varijon.tinies.SimplyGTS.command.subcommand.GTSSellPokemonSubCommand;
 import com.varijon.tinies.SimplyGTS.command.subcommand.GTSShowListingSubcommand;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingType;
+import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
 import com.varijon.tinies.SimplyGTS.gui.GuiPagesItems;
 import com.varijon.tinies.SimplyGTS.gui.GuiPagesManage;
 import com.varijon.tinies.SimplyGTS.gui.GuiPagesPokemon;
@@ -86,12 +87,12 @@ public class GTSCommand extends PixelCommand {
 //			}
 			if(args.length == 0)
 			{
-				UIManager.openUIForcefully(player, GuiPagesPokemon.getPokemonMenu(GTSDataManager.getGTSPokemonListings(), player, 1));
+				UIManager.openUIForcefully(player, GuiPagesPokemon.getPokemonMenu(GTSDataManager.getGTSPokemonListings(), player, 1, EnumSortingOption.None));
 				return;
 			}
 			if(args[0].equals("pokemon"))
 			{
-				UIManager.openUIForcefully(player, GuiPagesPokemon.getPokemonMenu(GTSDataManager.getGTSPokemonListings(), player, 1));
+				UIManager.openUIForcefully(player, GuiPagesPokemon.getPokemonMenu(GTSDataManager.getGTSPokemonListings(), player, 1, EnumSortingOption.None));
 				return;
 			}
 			if(args[0].equals("manage"))
@@ -99,10 +100,14 @@ public class GTSCommand extends PixelCommand {
 				UIManager.openUIForcefully(player, GuiPagesManage.getManageMenu(GTSDataManager.getAllListingsPlayer(player.getUUID()),player, 1));
 				return;
 			}
+			if(args[0].equals("history"))
+			{
+				UIManager.openUIForcefully(player, GuiPagesManage.getManageMenu(GTSDataManager.getAllListingsPlayer(player.getUUID()),player, 1));
+				return;
+			}
 			if(args[0].equals("items"))
 			{
-				//change to items
-				UIManager.openUIForcefully(player, GuiPagesItems.getItemMenu(GTSDataManager.getGTSItemsListings(), player, 1));
+				UIManager.openUIForcefully(player, GuiPagesItems.getItemMenu(GTSDataManager.getGTSItemsListings(), player, 1, EnumSortingOption.None));
 				return;
 			}
 			if(args[0].equals("help"))
@@ -153,6 +158,7 @@ public class GTSCommand extends PixelCommand {
 			lstTabComplete.add("pokemon");
 			lstTabComplete.add("help");
 			lstTabComplete.add("manage");
+			lstTabComplete.add("history");
 
 			return lstTabComplete;
 		}

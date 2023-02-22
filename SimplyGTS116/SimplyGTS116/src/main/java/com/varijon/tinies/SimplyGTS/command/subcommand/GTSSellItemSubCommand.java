@@ -64,40 +64,7 @@ public class GTSSellItemSubCommand
 		int cost = 0;
 		if(args.length == 2)
 		{
-			ShopItemWithVariation shopItem = null;
-			for(ShopkeeperData shopData : ServerNPCRegistry.getEnglishShopkeepers())
-			{
-				for(ShopItemWithVariation shopItemVar : shopData.getItemList())
-				{
-					if(shopItemVar.getItemStack().getItem() == itemToSell.getItem())
-					{
-						if(itemToSell.getDamageValue() == shopItemVar.getItemStack().getDamageValue())
-						{
-							if(itemToSell.hasTag() && shopItemVar.getItemStack().hasTag())
-							{
-								if(itemToSell.getTag().contains("tm"))
-								{
-									if(itemToSell.getTag().getInt("tm") == shopItemVar.getItemStack().getTag().getInt("tm"))
-									{
-										shopItem = shopItemVar;
-										break;
-									}
-								}
-								if(itemToSell.getTag().equals(shopItemVar.getItemStack().getTag()))
-								{
-									shopItem = shopItemVar;		
-									break;											
-								}
-							}
-							else
-							{
-								shopItem = shopItemVar;
-								break;
-							}
-						}
-					}
-				}
-			}
+			ShopItemWithVariation shopItem = Util.getShopItem(itemToSell);
 			if(shopItem == null)
 			{
 				player.sendMessage(new StringTextComponent(TextFormatting.RED + "No shop sells this item!"), UUID.randomUUID());
@@ -146,7 +113,7 @@ public class GTSSellItemSubCommand
 		
 		
 		UUID listingUUID = UUID.randomUUID();
-		GTSListingItem listingData = GTSDataManager.addListingItemsData(new GTSListingItem(EnumListingType.Item, EnumListingStatus.Active, System.currentTimeMillis(), System.currentTimeMillis() + Util.parsePeriod(GTSDataManager.getConfig().getListingDuration()), cost*itemToSell.getCount(), player.getUUID(), listingUUID, itemToSell.getItem().getRegistryName().toString(), itemToSell.getDamageValue(),itemToSell.hasTag() ? itemToSell.getTag().toString() : "", itemToSell.getCount(),ITextComponent.Serializer.toJson(itemToSell.getDisplayName())));
+		GTSListingItem listingData = GTSDataManager.addListingItemsData(new GTSListingItem(EnumListingType.Item, EnumListingStatus.Active, System.currentTimeMillis(), System.currentTimeMillis() + Util.parsePeriod(GTSDataManager.getConfig().getListingDuration()), cost*itemToSell.getCount(), player.getUUID(), listingUUID, itemToSell.getItem().getRegistryName().toString(),itemToSell.hasTag() ? itemToSell.getTag().toString() : "", itemToSell.getCount(),ITextComponent.Serializer.toJson(itemToSell.getDisplayName())));
 		SimplyGTS.logger.info(player.getName().getString() + " listed " + itemToSell.getCount() + "x " + listingData.getItemName() + " for " + listingData.getListingPrice());
 		GTSDataManager.writeListingItemsData(listingData);
 		

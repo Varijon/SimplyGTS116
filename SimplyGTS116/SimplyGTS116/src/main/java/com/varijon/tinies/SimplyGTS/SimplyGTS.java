@@ -6,6 +6,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.varijon.tinies.SimplyGTS.command.GTSCommand;
+import com.varijon.tinies.SimplyGTS.command.GTSPriceCheckCommand;
+import com.varijon.tinies.SimplyGTS.command.GTSQuickListCommand;
 import com.varijon.tinies.SimplyGTS.command.GTSReloadCommand;
 import com.varijon.tinies.SimplyGTS.handler.GTSTicker;
 import com.varijon.tinies.SimplyGTS.storage.GTSDataManager;
@@ -60,6 +62,8 @@ public class SimplyGTS
 	public void registerCommands(RegisterCommandsEvent event)
 	{
 		new GTSCommand(event.getDispatcher());
+		new GTSQuickListCommand(event.getDispatcher());
+		new GTSPriceCheckCommand(event.getDispatcher());
 		new GTSReloadCommand(event.getDispatcher());
 	}
 }

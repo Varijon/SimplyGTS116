@@ -11,15 +11,18 @@ import com.google.gson.GsonBuilder;
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
 import com.varijon.tinies.SimplyGTS.object.GTSConfig;
+import com.varijon.tinies.SimplyGTS.object.GTSItemPriceHistory;
 import com.varijon.tinies.SimplyGTS.object.GTSListing;
 import com.varijon.tinies.SimplyGTS.object.GTSListingItem;
 import com.varijon.tinies.SimplyGTS.object.GTSListingPokemon;
+import com.varijon.tinies.SimplyGTS.object.GTSPriceHistoryList;
 import com.varijon.tinies.SimplyGTS.object.ItemConfigMinPrice;
 
 public class GTSDataManager 
 {
 	static ArrayList<GTSListingPokemon> lstListingDataPokemon = new ArrayList<GTSListingPokemon>();
 	static ArrayList<GTSListingItem> lstListingDataItems = new ArrayList<GTSListingItem>();
+	static ArrayList<GTSPriceHistoryList> lstPriceHistory = new ArrayList<GTSPriceHistoryList>();
 	static GTSConfig gtsConfig;
 	
 	public static boolean loadStorage()
@@ -27,6 +30,7 @@ public class GTSDataManager
 		String basefolder = new File("").getAbsolutePath();
         String source = basefolder + "/config/SimplyGTS/listings/pokemon";
         String source2 = basefolder + "/config/SimplyGTS/listings/items";
+        String source3 = basefolder + "/config/SimplyGTS/pricehistory";
 		try
 		{
 			Gson gson = new Gson();
@@ -41,9 +45,15 @@ public class GTSDataManager
 			{
 				dir2.mkdirs();
 			}
+			File dir3 = new File(source3);
+			if(!dir3.exists())
+			{
+				dir3.mkdirs();
+			}
 			
 			lstListingDataPokemon.clear();
 			lstListingDataItems.clear();
+			lstPriceHistory.clear();
 			
 			for(File file : dir.listFiles())
 			{
@@ -61,6 +71,15 @@ public class GTSDataManager
 				GTSListingItem listingData = gson.fromJson(reader, GTSListingItem.class);
 								
 				lstListingDataItems.add(listingData);
+				reader.close();
+			}
+			for(File file : dir3.listFiles())
+			{
+				FileReader reader = new FileReader(file);
+				
+				GTSPriceHistoryList historyData = gson.fromJson(reader, GTSPriceHistoryList.class);
+								
+				lstPriceHistory.add(historyData);
 				reader.close();
 			}
 			return true;
@@ -126,9 +145,9 @@ public class GTSDataManager
 			if(!config.exists())
 			{
 				ArrayList<ItemConfigMinPrice> lstExampleMinPrice = new ArrayList<>();
-				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.destiny_knot.getRegistryName().toString(), 50000, 0, ""));
-				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.ever_stone.getRegistryName().toString(), 50000, 0, ""));
-				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.mint_adamant.getRegistryName().toString(), 50000, -1, ""));
+				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.destiny_knot.getRegistryName().toString(), 50000, ""));
+				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.ever_stone.getRegistryName().toString(), 50000, ""));
+				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.mint_adamant.getRegistryName().toString(), 50000, ""));
 				
 				GTSConfig gtsConfig = new GTSConfig(0, 0, 30000, 40000, 50000, 50000, 1000000, 50000, "3d", 8, 2.0, 0.20, 0.05,lstExampleMinPrice);
 		
@@ -187,6 +206,31 @@ public class GTSDataManager
 					
 			FileWriter writer = new FileWriter(source + "/" + listingData.getListingID() + ".json");
 			gson.toJson(listingData, writer);
+			writer.close();
+		}
+			
+		catch (Exception ex) 
+		{
+		    ex.printStackTrace();
+		}
+	}
+	
+	public static void writeHistoryData(GTSPriceHistoryList historyData)
+	{
+		String basefolder = new File("").getAbsolutePath();
+        String source = basefolder + "/config/SimplyGTS/pricehistory";
+		
+		try
+		{
+			File dir = new File(source);
+			if(!dir.exists())
+			{
+				dir.mkdirs();
+			}
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+					
+			FileWriter writer = new FileWriter(source + "/" + historyData.getItemName().replace(':', '_') + ".json");
+			gson.toJson(historyData, writer);
 			writer.close();
 		}
 			
@@ -285,6 +329,18 @@ public class GTSDataManager
 		return null;
 	}
 	
+	public static GTSPriceHistoryList getPriceHistoryList(String itemName)
+	{
+		for(GTSPriceHistoryList priceHistoryList : lstPriceHistory)
+		{
+			if(priceHistoryList.getItemName().equals(itemName))
+			{
+				return priceHistoryList;
+			}
+		}
+		return null;
+	}
+	
 	public static void removeListingPokemonData(GTSListingPokemon listingData)
 	{
 		deleteGTSPokemonListing(listingData);
@@ -305,6 +361,12 @@ public class GTSDataManager
 	{
 		lstListingDataItems.add(listingData);
 		return listingData;
+	}
+	
+	public static GTSPriceHistoryList addHistoryData(GTSPriceHistoryList historyList)
+	{
+		lstPriceHistory.add(historyList);
+		return historyList;
 	}
 	
 	public static int getPlayerListingTotal(UUID player)

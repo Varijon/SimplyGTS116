@@ -10,15 +10,13 @@ public class ItemConfigMinPrice
 {
 	String itemName;
 	int minPrice;
-	int itemMeta;
 	String itemNBT;
 	transient ItemStack itemStack;
 		
-	public ItemConfigMinPrice(String itemName, int minPrice, int itemMeta, String itemNBT) {
+	public ItemConfigMinPrice(String itemName, int minPrice, String itemNBT) {
 		super();
 		this.itemName = itemName;
 		this.minPrice = minPrice;
-		this.itemMeta = itemMeta;
 		this.itemNBT = itemNBT;
 	}
 	public int getMinPrice() {
@@ -32,12 +30,6 @@ public class ItemConfigMinPrice
 	}
 	public void setItemName(String itemName) {
 		this.itemName = itemName;
-	}
-	public int getItemMeta() {
-		return itemMeta;
-	}
-	public void setItemMeta(int itemMeta) {
-		this.itemMeta = itemMeta;
 	}
 	public String getItemNBT() {
 		return itemNBT;
@@ -57,14 +49,12 @@ public class ItemConfigMinPrice
 			if(itemNBT.equals(""))
 			{			
 				this.itemStack = new ItemStack(ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(itemName)));
-				this.itemStack.setDamageValue(itemMeta);
 			}
 			else
 			{
 				try {
 					this.itemStack = new ItemStack(ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(itemName)));
 					this.itemStack.setTag(JsonToNBT.parseTag((itemNBT)));
-					this.itemStack.setDamageValue(itemMeta);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

@@ -18,17 +18,15 @@ public class GTSListingItem extends GTSListing
 	String itemName;
 	String itemNBT;
 	int itemCount;
-	int itemMeta;
 	String itemTextComponent;
 	transient ItemStack itemStack;
 	public GTSListingItem(EnumListingType listingType, EnumListingStatus listingStatus, long listingStart,
-			long listingEnd, int listingPrice, UUID listingOwner, UUID listingID,String itemName, int itemMeta, String itemNBT, int itemCount, String itemTextComponent) 
+			long listingEnd, int listingPrice, UUID listingOwner, UUID listingID,String itemName, String itemNBT, int itemCount, String itemTextComponent) 
 	{
 		super(listingType, listingStatus, listingStart, listingEnd, listingPrice, listingOwner, listingID, listingID);
 		
 		this.itemNBT = itemNBT;
 		this.itemName = itemName;
-		this.itemMeta = itemMeta;
 		this.itemCount = itemCount;
 		this.itemTextComponent = itemTextComponent;
 	}
@@ -45,14 +43,12 @@ public class GTSListingItem extends GTSListing
 				if(itemNBT.equals(""))
 				{
 					this.itemStack = new ItemStack(ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(itemName)));
-					this.itemStack.setDamageValue(itemMeta);
 					this.itemStack.setCount(this.itemCount);
 				}
 				else
 				{
 					this.itemStack = new ItemStack(ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(itemName)));
 					this.itemStack.setTag(JsonToNBT.parseTag((itemNBT)));
-					this.itemStack.setDamageValue(itemMeta);
 					this.itemStack.setCount(this.itemCount);
 				}
 			} catch (Exception e) {
@@ -95,18 +91,13 @@ public class GTSListingItem extends GTSListing
 		this.itemName = itemName;
 	}
 
-	public int getItemMeta() {
-		return itemMeta;
-	}
-
-	public void setItemMeta(int itemMeta) {
-		this.itemMeta = itemMeta;
-	}
-
 	public ItemStack getItemStack() {
 		return itemStack;
 	}
 	
-	
+	public String getItemHoverName()
+	{
+		return this.createOrGetItemStack().getHoverName().getString();
+	}
 	
 }

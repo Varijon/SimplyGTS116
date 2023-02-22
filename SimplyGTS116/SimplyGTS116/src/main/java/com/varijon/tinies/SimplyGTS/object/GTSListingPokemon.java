@@ -65,6 +65,9 @@ public class GTSListingPokemon extends GTSListing
 		this.soldAsBreedable = soldAsBreedable;
 	}
 	
-	
+	public String getPokemonName()
+	{
+		return this.createOrGetPokemonData().getStats().getPokemon().getSpecies().getName();
+	}
 	
 }

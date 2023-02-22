@@ -2,8 +2,11 @@ package com.varijon.tinies.SimplyGTS.gui;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.economy.BankAccount;
@@ -14,8 +17,12 @@ import com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
 import com.varijon.tinies.SimplyGTS.SimplyGTS;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
+import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
+import com.varijon.tinies.SimplyGTS.object.GTSItemPriceHistory;
 import com.varijon.tinies.SimplyGTS.object.GTSListingItem;
+import com.varijon.tinies.SimplyGTS.object.GTSPriceHistoryList;
 import com.varijon.tinies.SimplyGTS.storage.GTSDataManager;
+import com.varijon.tinies.SimplyGTS.util.Util;
 
 import ca.landonjw.gooeylibs2.api.UIManager;
 import ca.landonjw.gooeylibs2.api.button.GooeyButton;
@@ -23,9 +30,15 @@ import ca.landonjw.gooeylibs2.api.page.GooeyPage;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate.Builder;
 import net.minecraft.block.Blocks;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemStack.TooltipDisplayFlags;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.ListNBT;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -36,18 +49,60 @@ import net.minecraftforge.server.permission.PermissionAPI;
 
 public class GuiPagesItems 
 {
-	public static GooeyPage getItemMenu(ArrayList<GTSListingItem> lstGTSListing, ServerPlayerEntity player, int page)
+	public static GooeyPage getItemMenu(ArrayList<GTSListingItem> lstGTSListing, ServerPlayerEntity player, int page, EnumSortingOption sort)
 	{
         ChestTemplate.Builder templateBuilder = ChestTemplate.builder(6);
+        
+        List<GTSListingItem> lstSortedGTSListing = null;
+        switch(sort)
+        {
+	        case AZ:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingItem::getItemHoverName))
+	      		  .collect(Collectors.toList());
+	        	break;
+			case AZReversed:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingItem::getItemHoverName).reversed())
+	      		  .collect(Collectors.toList());
+				break;
+			case Duration:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingItem::getListingTimeRemaining).reversed())
+	      		  .collect(Collectors.toList());
+				break;
+			case DurationReversed:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingItem::getListingTimeRemaining))
+	      		  .collect(Collectors.toList());
+				break;
+			case None:
+				lstSortedGTSListing = lstGTSListing;
+				break;
+			case Price:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingItem::getListingPrice))
+	      		  .collect(Collectors.toList());
+				break;
+			case PriceReversed:
+		        lstSortedGTSListing = lstGTSListing.stream()
+	      		  .sorted(Comparator.comparing(GTSListingItem::getListingPrice).reversed())
+	      		  .collect(Collectors.toList());
+				break;
+			default:
+				break;
+        		
+        }
+        
         
         int slotColumnCount = 0;
         int slotRowCount = 0;
         
-        for(int x = 0; x < lstGTSListing.size(); x++)
+        for(int x = 0; x < lstSortedGTSListing.size(); x++)
 		{
 			if(x >= (page-1) * 45 && x < page * 45)
 			{
-				GTSListingItem itemListing = lstGTSListing.get(x);
+				GTSListingItem itemListing = lstSortedGTSListing.get(x);
 				if(itemListing.getListingStatus() != EnumListingStatus.Active)
 				{
 					continue;
@@ -77,7 +132,7 @@ public class GuiPagesItems
 								{
 			        				UIManager.closeUI(action.getPlayer());
 			        				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-			        				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+			        				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, sort));
 								}
 							}
 						})
@@ -98,7 +153,7 @@ public class GuiPagesItems
                 .onClick((action) -> 
         		{
        				UIManager.closeUI(action.getPlayer());
-   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page-1));
+   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page-1, sort));
         		})
                 .build();
 
@@ -108,7 +163,7 @@ public class GuiPagesItems
                 .onClick((action) -> 
         		{
        				UIManager.closeUI(action.getPlayer());
-   					UIManager.openUIForcefully(action.getPlayer(), GuiPagesPokemon.getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), 1));
+   					UIManager.openUIForcefully(action.getPlayer(), GuiPagesPokemon.getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), 1, sort));
         		})
                 .build();
         
@@ -118,19 +173,54 @@ public class GuiPagesItems
                 .onClick((action) -> 
         		{
        				UIManager.closeUI(action.getPlayer());
-   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page+1));
+   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page+1, sort));
+        		})
+                .build();               
+        GooeyButton AZSortButton = GooeyButton.builder()
+                .display(Util.getButtonDisplay(EnumSortingOption.AZ, sort))
+                .title(TextFormatting.GOLD + Util.getSortTextAZ(sort))
+                .onClick((action) -> 
+        		{
+       				UIManager.closeUI(action.getPlayer());
+   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, Util.getReverseSortAZ(sort)));
+        		})
+                .build();   
+        GooeyButton DurationSortButton = GooeyButton.builder()
+                .display(Util.getButtonDisplay(EnumSortingOption.Duration,sort))
+                .title(TextFormatting.GOLD + Util.getSortTextDuration(sort))
+                .onClick((action) -> 
+        		{
+       				UIManager.closeUI(action.getPlayer());
+   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, Util.getReverseSortDuration(sort)));
+        		})
+                .build();   
+        GooeyButton PriceSortButton = GooeyButton.builder()
+                .display(Util.getButtonDisplay(EnumSortingOption.Price,sort))
+                .title(TextFormatting.GOLD + Util.getSortTextPrice(sort))
+                .onClick((action) -> 
+        		{
+       				UIManager.closeUI(action.getPlayer());
+   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, Util.getReverseSortPrice(sort)));
         		})
                 .build();
+
+        
         if(page != 1)
         {
 	        templateBuilder
 	        	.set(5, 0, backPageButton)
+	        	.set(5, 1, PriceSortButton)
+	        	.set(5, 2, DurationSortButton)
+	        	.set(5, 3, AZSortButton)
 	        	.set(5, 4, switchToPokemonButton)
-	        	.set(5, 8, forwardPageButton);        	
+	        	.set(5, 8, forwardPageButton);
         }
         else
         {
             templateBuilder
+        		.set(5, 1, PriceSortButton)
+	        	.set(5, 2, DurationSortButton)
+        		.set(5, 3, AZSortButton)
         		.set(5, 4, switchToPokemonButton)
             	.set(5, 8, forwardPageButton);
         }
@@ -147,6 +237,7 @@ public class GuiPagesItems
         return pageBuilder;
 	}
 	
+
 	public static GooeyPage getBuyConfirmMenuItems(int cost, UUID listingID, int page, ServerPlayerEntity player)
 	{
 		GooeyButton emptySlot = GooeyButton.builder()
@@ -165,7 +256,7 @@ public class GuiPagesItems
         			{
         				UIManager.closeUI(action.getPlayer());
         				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-    					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+    					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         				return;
         			}
         			if(gtsListingItem.getListingStatus() == EnumListingStatus.Active)
@@ -180,7 +271,7 @@ public class GuiPagesItems
         				{
         					UIManager.closeUI(action.getPlayer());
         					action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "You don't have enough money!"), UUID.randomUUID());
-        					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+        					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         					return;
         				}
         				
@@ -236,15 +327,17 @@ public class GuiPagesItems
             				gtsListingItem.setListingStatus(EnumListingStatus.Sold);
             				gtsListingItem.setListingBuyer(action.getPlayer().getUUID());
             				GTSDataManager.writeListingItemsData(gtsListingItem);
+            				
+            				Util.registerPriceHistory(gtsListingItem);
 
-            				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+            				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         				}
         			}
         			else
         			{
         				UIManager.closeUI(action.getPlayer());
         				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-        				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+        				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         		})
                 .build();
@@ -255,7 +348,7 @@ public class GuiPagesItems
                 .onClick((action) -> 
         		{
        				UIManager.closeUI(action.getPlayer());
-   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+   					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         		})
                 .build();
 		
@@ -269,7 +362,7 @@ public class GuiPagesItems
         			{
         				UIManager.closeUI(action.getPlayer());
         				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-    					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+    					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         				return;
         			}
         			if(gtsListingItem.getListingStatus() == EnumListingStatus.Active)
@@ -322,13 +415,13 @@ public class GuiPagesItems
         				GTSDataManager.writeListingItemsData(gtsListingItem);
 
 
-        				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+        				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         			else
         			{
         				UIManager.closeUI(action.getPlayer());
         				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Listing is no longer available!"), UUID.randomUUID());
-        				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));
+        				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         		})
                 .build();
@@ -384,7 +477,7 @@ public class GuiPagesItems
         				}
         				else
         				{
-        					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));        					
+        					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));        					
         				}
         				return;
         			}
@@ -419,7 +512,7 @@ public class GuiPagesItems
         				}
         				else
         				{
-        					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));        					
+        					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));        					
         				}
         			}
         			else
@@ -432,7 +525,7 @@ public class GuiPagesItems
         				}
         				else
         				{
-        					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));        					
+        					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));        					
         				}
         			}
         		})
@@ -450,7 +543,7 @@ public class GuiPagesItems
     				}
     				else
     				{
-    					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page));        					
+    					UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));        					
     				}
         		})
                 .build();

@@ -3,6 +3,7 @@ package com.varijon.tinies.SimplyGTS.util;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.Period;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,14 +22,23 @@ import com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
 import com.pixelmonmod.pixelmon.api.util.helpers.SpriteItemHelper;
 import com.pixelmonmod.pixelmon.battles.attacks.Attack;
+import com.pixelmonmod.pixelmon.entities.npcs.registry.ServerNPCRegistry;
+import com.pixelmonmod.pixelmon.entities.npcs.registry.ShopItemWithVariation;
+import com.pixelmonmod.pixelmon.entities.npcs.registry.ShopkeeperData;
+import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
+import com.varijon.tinies.SimplyGTS.object.GTSItemPriceHistory;
+import com.varijon.tinies.SimplyGTS.object.GTSListingItem;
 import com.varijon.tinies.SimplyGTS.object.GTSListingPokemon;
+import com.varijon.tinies.SimplyGTS.object.GTSPriceHistoryList;
 import com.varijon.tinies.SimplyGTS.object.ItemConfigMinPrice;
 import com.varijon.tinies.SimplyGTS.storage.GTSDataManager;
 
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.item.ItemStack.TooltipDisplayFlags;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.ListNBT;
@@ -340,31 +350,16 @@ public class Util
 		{
 			if(itemConfig.getItemName().equals(item.getItem().getRegistryName().toString()))
 			{
-				if(item.hasTag())
+				if(item.getTag() != null)
 				{
-					if(!item.getTag().toString().equals(itemConfig.getItemNBT()))
-					{
-						continue;
-					}
-					if(itemConfig.getItemMeta() == -1)
-					{
-						finalPrice += itemConfig.getMinPrice();
-					}
-					if(itemConfig.getItemMeta() == item.getDamageValue())
+					if(item.getTag().toString().equals(itemConfig.getItemNBT()))
 					{
 						finalPrice += itemConfig.getMinPrice();
 					}
 				}
 				else
 				{
-					if(itemConfig.getItemMeta() == -1)
-					{
-						finalPrice += itemConfig.getMinPrice();
-					}
-					if(itemConfig.getItemMeta() == item.getDamageValue())
-					{
-						finalPrice += itemConfig.getMinPrice();
-					}
+					finalPrice += itemConfig.getMinPrice();
 				}
 			}
 		}
@@ -493,4 +488,189 @@ public class Util
 	    return instant.toEpochMilli();
 	}
 	
+	public static ShopItemWithVariation getShopItem(ItemStack itemToSell)
+	{
+		ShopItemWithVariation shopItem = null;
+		for(ShopkeeperData shopData : ServerNPCRegistry.getEnglishShopkeepers())
+		{
+			for(ShopItemWithVariation shopItemVar : shopData.getItemList())
+			{
+				if(shopItemVar.getItemStack().getItem() == itemToSell.getItem())
+				{
+					if(itemToSell.getDamageValue() == shopItemVar.getItemStack().getDamageValue())
+					{
+						if(itemToSell.hasTag() && shopItemVar.getItemStack().hasTag())
+						{
+							if(itemToSell.getTag().contains("tm"))
+							{
+								if(itemToSell.getTag().getInt("tm") == shopItemVar.getItemStack().getTag().getInt("tm"))
+								{
+									shopItem = shopItemVar;
+									break;
+								}
+							}
+							if(itemToSell.getTag().equals(shopItemVar.getItemStack().getTag()))
+							{
+								shopItem = shopItemVar;		
+								break;											
+							}
+						}
+						else
+						{
+							shopItem = shopItemVar;
+							break;
+						}
+					}
+				}
+			}
+		}
+		return shopItem;
+	}
+	
+	public static void registerPriceHistory(GTSListingItem gtsListingItem)
+	{
+		GTSPriceHistoryList priceHistoryList = GTSDataManager.getPriceHistoryList(gtsListingItem.getItemName());
+		if(priceHistoryList == null)
+		{
+			priceHistoryList = GTSDataManager.addHistoryData(new GTSPriceHistoryList(new ArrayList<GTSItemPriceHistory>(), gtsListingItem.getItemName()));
+		}
+		GTSItemPriceHistory priceHistory = priceHistoryList.getItemPriceHistory(gtsListingItem.createOrGetItemStack());
+		if(priceHistory == null)
+		{
+			priceHistory = priceHistoryList.addPriceHistory(new GTSItemPriceHistory(0, 0, gtsListingItem.getItemNBT()));
+		}
+		priceHistory.setNumberSold(priceHistory.getNumberSold() + gtsListingItem.getItemCount());
+		priceHistory.setTotalSpent(priceHistory.getTotalSpent() + gtsListingItem.getListingPrice());
+		
+		GTSDataManager.writeHistoryData(priceHistoryList);
+	}
+	
+	public static String getSortTextAZ(EnumSortingOption sort) 
+	{		
+		if(sort == EnumSortingOption.AZ)
+		{
+			return "Click to sort by Z-A";
+		}
+		if(sort == EnumSortingOption.AZReversed)
+		{
+			return "Click to sort by A-Z";			
+		}
+		return "Click to sort by A-Z";
+	}
+	
+	public static EnumSortingOption getReverseSortAZ(EnumSortingOption sort)
+	{
+		if(sort == EnumSortingOption.AZ)
+		{
+			return EnumSortingOption.AZReversed;
+		}
+		if(sort== EnumSortingOption.AZReversed)
+		{
+			return EnumSortingOption.AZ;
+		}
+		return EnumSortingOption.AZ;
+	}
+	
+	public static String getSortTextDuration(EnumSortingOption sort) 
+	{		
+		if(sort == EnumSortingOption.Duration)
+		{
+			return "Click to sort by oldest";
+		}
+		if(sort == EnumSortingOption.DurationReversed)
+		{
+			return "Click to sort by newest";			
+		}
+		return "Click to sort newest";
+	}
+	
+	public static EnumSortingOption getReverseSortDuration(EnumSortingOption sort)
+	{
+		if(sort == EnumSortingOption.Duration)
+		{
+			return EnumSortingOption.DurationReversed;
+		}
+		if(sort== EnumSortingOption.DurationReversed)
+		{
+			return EnumSortingOption.Duration;
+		}
+		return EnumSortingOption.Duration;
+	}
+	
+	public static String getSortTextPrice(EnumSortingOption sort) 
+	{		
+		if(sort == EnumSortingOption.Price)
+		{
+			return "Click to sort by highest price";
+		}
+		if(sort == EnumSortingOption.PriceReversed)
+		{
+			return "Click to sort by lowest price";			
+		}
+		return "Click to sort by lowest price";
+	}
+	
+	public static EnumSortingOption getReverseSortPrice(EnumSortingOption sort)
+	{
+		if(sort == EnumSortingOption.Price)
+		{
+			return EnumSortingOption.PriceReversed;
+		}
+		if(sort== EnumSortingOption.PriceReversed)
+		{
+			return EnumSortingOption.Price;
+		}
+		return EnumSortingOption.Price;
+	}
+	
+
+	public static ItemStack getButtonDisplay(EnumSortingOption type, EnumSortingOption sort)
+	{
+        ItemStack returnItem = null;
+        if(type == EnumSortingOption.AZ)
+        {
+	        if(sort == EnumSortingOption.AZ || sort == EnumSortingOption.AZReversed)
+	        {
+	        	returnItem = new ItemStack(Items.CRIMSON_SIGN);
+	        	returnItem.enchant(Enchantments.SHARPNESS, 1);
+	        	returnItem.hideTooltipPart(TooltipDisplayFlags.ENCHANTMENTS);
+	        }
+	        else
+	        {
+	        	returnItem = new ItemStack(Items.CRIMSON_SIGN);	        	
+	        }
+        }
+        if(type == EnumSortingOption.Duration)
+        {
+	        if(sort == EnumSortingOption.Duration || sort == EnumSortingOption.DurationReversed)
+	        {
+	        	returnItem = new ItemStack(PixelmonItems.silver_hourglass);
+	        	returnItem.enchant(Enchantments.SHARPNESS, 1);
+	        	returnItem.hideTooltipPart(TooltipDisplayFlags.ENCHANTMENTS);
+	        	returnItem.getTag().putString("tooltip", "");
+	        }
+	        else
+	        {
+	        	returnItem = new ItemStack(PixelmonItems.silver_hourglass);
+	        	returnItem.getOrCreateTag().putString("tooltip", "");
+	        }
+        }
+        if(type == EnumSortingOption.Price)
+        {
+	        if(sort == EnumSortingOption.Price || sort == EnumSortingOption.PriceReversed)
+	        {
+	        	returnItem = new ItemStack(PixelmonItems.amulet_coin);
+	        	returnItem.enchant(Enchantments.SHARPNESS, 1);
+	        	returnItem.hideTooltipPart(TooltipDisplayFlags.ENCHANTMENTS);
+	        	returnItem.getTag().putString("tooltip", "");
+	        }
+	        else
+	        {
+	        	returnItem = new ItemStack(PixelmonItems.amulet_coin);
+	        	returnItem.getOrCreateTag().putString("tooltip", "");
+	        }
+        }
+        
+        return returnItem;
+	}
 }
