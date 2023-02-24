@@ -8,6 +8,8 @@ import java.util.UUID;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pixelmonmod.pixelmon.command.PixelCommand;
@@ -24,8 +26,10 @@ import com.varijon.tinies.SimplyGTS.util.Util;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
@@ -82,7 +86,7 @@ public class GTSQuickListCommand extends PixelCommand {
 				return;
 			}
 			
-			ItemStack itemToSell = player.getMainHandItem();
+			ItemStack itemToSell = player.getMainHandItem().copy();
 			int cost = 0;
 			
 			if(args.length == 1)
@@ -171,7 +175,9 @@ public class GTSQuickListCommand extends PixelCommand {
 			player.inventory.removeItem(player.getMainHandItem());
 					
 			UUID listingUUID = UUID.randomUUID();
-			GTSListingItem listingData = GTSDataManager.addListingItemsData(new GTSListingItem(EnumListingType.Item, EnumListingStatus.Active, System.currentTimeMillis(), System.currentTimeMillis() + Util.parsePeriod(GTSDataManager.getConfig().getListingDuration()), cost*itemToSell.getCount(), player.getUUID(), listingUUID, itemToSell.getItem().getRegistryName().toString(),itemToSell.hasTag() ? itemToSell.getTag().toString() : "", itemToSell.getCount(),ITextComponent.Serializer.toJson(itemToSell.getDisplayName())));
+//			GTSListingItem listingData = GTSDataManager.addListingItemsData(new GTSListingItem(EnumListingType.Item, EnumListingStatus.Active, System.currentTimeMillis(), System.currentTimeMillis() + Util.parsePeriod(GTSDataManager.getConfig().getListingDuration()), cost*itemToSell.getCount(), player.getUUID(), listingUUID, itemToSell.getItem().getRegistryName().toString(),itemToSell.hasTag() ? itemToSell.getTag().toString() : "", itemToSell.getCount(),ITextComponent.Serializer.toJson(itemToSell.getDisplayName())));
+						
+			GTSListingItem listingData = GTSDataManager.addListingItemsData(new GTSListingItem(EnumListingType.Item, EnumListingStatus.Active, System.currentTimeMillis(), System.currentTimeMillis() + Util.parsePeriod(GTSDataManager.getConfig().getListingDuration()), cost*itemToSell.getCount(), player.getUUID(), listingUUID, itemToSell.serializeNBT().toString()));
 			SimplyGTS.logger.info(player.getName().getString() + " listed " + itemToSell.getCount() + "x " + listingData.getItemName() + " for " + listingData.getListingPrice());
 			GTSDataManager.writeListingItemsData(listingData);
 			

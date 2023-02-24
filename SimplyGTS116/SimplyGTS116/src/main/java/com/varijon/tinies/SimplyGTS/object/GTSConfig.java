@@ -17,10 +17,11 @@ public class GTSConfig
 	double generalTax;
 	String listingDuration;
 	int maxPlayerListings;
+	int daysToKeepHistory;
 	ArrayList<ItemConfigMinPrice> lstMinItemPrices;
 	
 	public GTSConfig(int minPrice1IV, int minPrice2IV, int minPrice3IV, int minPrice4IV, int minPrice5IV,
-			int minPrice6IV, int maxPrice, int minHAPrice, String listingDuration, int maxPlayerListings, double breedablePriceMultiplier, double breedablePokemonTax, double generalTax,
+			int minPrice6IV, int maxPrice, int minHAPrice, String listingDuration, int maxPlayerListings, int daysToKeepHistory, double breedablePriceMultiplier, double breedablePokemonTax, double generalTax,
 			ArrayList<ItemConfigMinPrice> lstMinItemPrices) {
 		super();
 		this.minPrice1IV = minPrice1IV;
@@ -36,6 +37,7 @@ public class GTSConfig
 		this.generalTax = generalTax;
 		this.listingDuration = listingDuration;
 		this.maxPlayerListings = maxPlayerListings;
+		this.daysToKeepHistory = daysToKeepHistory;
 		this.lstMinItemPrices = lstMinItemPrices;
 	}
 
@@ -149,6 +151,14 @@ public class GTSConfig
 
 	public void setGeneralTax(double generalTax) {
 		this.generalTax = generalTax;
+	}
+
+	public int getDaysToKeepHistory() {
+		return daysToKeepHistory;
+	}
+
+	public void setDaysToKeepHistory(int daysToKeepHistory) {
+		this.daysToKeepHistory = daysToKeepHistory;
 	}
 	
 	

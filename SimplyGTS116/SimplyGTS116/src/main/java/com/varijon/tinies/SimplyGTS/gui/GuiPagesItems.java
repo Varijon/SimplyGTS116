@@ -11,14 +11,17 @@ import java.util.stream.Collectors;
 import com.pixelmonmod.pixelmon.Pixelmon;
 import com.pixelmonmod.pixelmon.api.economy.BankAccount;
 import com.pixelmonmod.pixelmon.api.economy.BankAccountProxy;
+import com.pixelmonmod.pixelmon.api.item.JsonItemStack;
 import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import com.pixelmonmod.pixelmon.api.storage.PartyStorage;
 import com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
 import com.varijon.tinies.SimplyGTS.SimplyGTS;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
+import com.varijon.tinies.SimplyGTS.enums.EnumListingType;
 import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
 import com.varijon.tinies.SimplyGTS.object.GTSItemPriceHistory;
+import com.varijon.tinies.SimplyGTS.object.GTSListingHistory;
 import com.varijon.tinies.SimplyGTS.object.GTSListingItem;
 import com.varijon.tinies.SimplyGTS.object.GTSPriceHistoryList;
 import com.varijon.tinies.SimplyGTS.storage.GTSDataManager;
@@ -38,7 +41,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemStack.TooltipDisplayFlags;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.ListNBT;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -111,7 +116,7 @@ public class GuiPagesItems
 				itemButton = GooeyButton.builder()
 						.display(ItemListingDisplay.getItemListingDisplay(itemListing.createOrGetItemStack(), player.getUUID(),itemListing, false))
 						.title(itemListing.createOrGetItemStack().getHoverName())
-						.lore(ItemListingDisplay.getItemListingDisplayList(itemListing.createOrGetItemStack(), player.getUUID(),itemListing, false))
+						.lore(ITextComponent.class,ItemListingDisplay.getItemListingDisplayList(itemListing.createOrGetItemStack(), player.getUUID(),itemListing, false))
 						.onClick((action) -> 
 						{
 							if(action.getButton().getDisplay() != null)
@@ -244,7 +249,14 @@ public class GuiPagesItems
                 .display(new ItemStack(Blocks.WHITE_STAINED_GLASS_PANE,1))
                 .title("")
                 .build();
-			
+
+
+		GTSListingItem gtsListingItemBuy = GTSDataManager.getListingItemsData(listingID);
+		GooeyButton itemToBuy = GooeyButton.builder()
+                .display(ItemListingDisplay.getItemListingDisplay(gtsListingItemBuy.createOrGetItemStack(), player.getUUID(),gtsListingItemBuy, false))
+				.title(gtsListingItemBuy.createOrGetItemStack().getHoverName())
+				.lore(ITextComponent.class,ItemListingDisplay.getItemListingDisplayList(gtsListingItemBuy.createOrGetItemStack(), player.getUUID(),gtsListingItemBuy, false))
+                .build();
 		
 		GooeyButton confirmButton = GooeyButton.builder()
                 .display(new ItemStack(Blocks.GREEN_STAINED_GLASS_PANE,1))
@@ -275,7 +287,7 @@ public class GuiPagesItems
         					return;
         				}
         				
-        			    if(!action.getPlayer().inventory.add(gtsListingItem.createOrGetItemStack()))
+        			    if(!action.getPlayer().inventory.add(gtsListingItem.createOrGetItemStack().copy()))
             			{
             				UIManager.closeUI(action.getPlayer());
             				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Your inventory is full, make space first!"), UUID.randomUUID());
@@ -320,7 +332,7 @@ public class GuiPagesItems
 
             				TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
             				chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.GREEN + " You bought " + TextFormatting.WHITE + gtsListingItem.getItemCount() + "x "));
-            				chatTrans.append(gtsListingItem.getTextComponent());
+            				chatTrans.append(gtsListingItem.createOrGetItemStack().getDisplayName());
             				chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + cost + TextFormatting.GREEN + "!" ));
             				action.getPlayer().sendMessage(chatTrans, UUID.randomUUID());	
 
@@ -329,6 +341,12 @@ public class GuiPagesItems
             				GTSDataManager.writeListingItemsData(gtsListingItem);
             				
             				Util.registerPriceHistory(gtsListingItem);
+            				
+//                            .display(ItemListingDisplay.getItemListingDisplay(gtsListingItem.createOrGetItemStack(), gtsListingItem.getListingOwner(),gtsListingItem, true))
+//            				.title(gtsListingItem.createOrGetItemStack().getHoverName())
+//            				.lore(ItemListingDisplay.getItemListingDisplayList(gtsListingItem.createOrGetItemStack(), gtsListingItem.getListingOwner(),gtsListingItem, false))
+            		
+            				GTSDataManager.addListingHistoryData(new GTSListingHistory(gtsListingItem, System.currentTimeMillis(), itemToBuy.getDisplay().serializeNBT().toString()));
 
             				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         				}
@@ -389,7 +407,7 @@ public class GuiPagesItems
         				{
         					TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         					chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.RED + " Your listing for " + TextFormatting.WHITE + gtsListingItem.getItemCount() + "x "));
-        					chatTrans.append(gtsListingItem.getTextComponent());
+        					chatTrans.append(gtsListingItem.createOrGetItemStack().getDisplayName());
         					chatTrans.append(new StringTextComponent(TextFormatting.RED + " was cancelled!" ));
         					partyReceiver.getPlayer().sendMessage(chatTrans, UUID.randomUUID());	
         				}
@@ -398,7 +416,7 @@ public class GuiPagesItems
 
         				TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         				chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.GREEN + " Listing for " + TextFormatting.WHITE + gtsListingItem.getItemCount() + "x "));
-    					chatTrans.append(gtsListingItem.getTextComponent());
+    					chatTrans.append(gtsListingItem.createOrGetItemStack().getDisplayName());
         				chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " cancelled!" ));        
         				
         				String sellerName = UsernameCache.getLastKnownUsername(gtsListingItem.getListingOwner());
@@ -414,6 +432,7 @@ public class GuiPagesItems
         				gtsListingItem.setListingStatus(EnumListingStatus.Expired);
         				GTSDataManager.writeListingItemsData(gtsListingItem);
 
+        				
 
         				UIManager.openUIForcefully(action.getPlayer(), getItemMenu(GTSDataManager.getGTSItemsListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
@@ -425,14 +444,6 @@ public class GuiPagesItems
         			}
         		})
                 .build();
-
-		GTSListingItem gtsListingItem = GTSDataManager.getListingItemsData(listingID);
-		GooeyButton itemToBuy = GooeyButton.builder()
-                .display(ItemListingDisplay.getItemListingDisplay(gtsListingItem.createOrGetItemStack(), player.getUUID(),gtsListingItem, false))
-				.title(gtsListingItem.createOrGetItemStack().getHoverName())
-				.lore(ItemListingDisplay.getItemListingDisplayList(gtsListingItem.createOrGetItemStack(), player.getUUID(),gtsListingItem, false))
-                .build();
-		
 		
 		Builder template = ChestTemplate.builder(3)
         		.fill(emptySlot)
@@ -483,7 +494,7 @@ public class GuiPagesItems
         			}
         			if(gtsListingItem.getListingStatus() == EnumListingStatus.Active)
         			{   
-        				if(!action.getPlayer().inventory.add(gtsListingItem.createOrGetItemStack()))
+        				if(!action.getPlayer().inventory.add(gtsListingItem.createOrGetItemStack().copy()))
             			{
             				UIManager.closeUI(action.getPlayer());
             				action.getPlayer().sendMessage(new StringTextComponent(TextFormatting.RED + "Your inventory is full, make space first!"), UUID.randomUUID());
@@ -495,7 +506,7 @@ public class GuiPagesItems
 
             				TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
             				chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.GREEN + " You cancelled your listing for " + TextFormatting.WHITE + gtsListingItem.getItemCount() + "x "));
-            				chatTrans.append(gtsListingItem.getTextComponent());
+            				chatTrans.append(gtsListingItem.createOrGetItemStack().getDisplayName());
             				chatTrans.append(new StringTextComponent(TextFormatting.GREEN + "!" ));
             				action.getPlayer().sendMessage(chatTrans, UUID.randomUUID());	       
             				
@@ -552,7 +563,7 @@ public class GuiPagesItems
 		GooeyButton itemToBuy = GooeyButton.builder()
                 .display(ItemListingDisplay.getItemListingDisplay(gtsListingItem.createOrGetItemStack(), gtsListingItem.getListingOwner(),gtsListingItem, true))
 				.title(gtsListingItem.createOrGetItemStack().getHoverName())
-				.lore(ItemListingDisplay.getItemListingDisplayList(gtsListingItem.createOrGetItemStack(), gtsListingItem.getListingOwner(),gtsListingItem, false))
+				.lore(ITextComponent.class,ItemListingDisplay.getItemListingDisplayList(gtsListingItem.createOrGetItemStack(), gtsListingItem.getListingOwner(),gtsListingItem, false))
                 .build();
 		
 		

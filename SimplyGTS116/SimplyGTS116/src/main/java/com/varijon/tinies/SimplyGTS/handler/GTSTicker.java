@@ -131,7 +131,7 @@ public class GTSTicker
 							}
 							TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
         					chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "] " + TextFormatting.GOLD + playerName + TextFormatting.GREEN + " bought your "+ TextFormatting.WHITE + gtsListingItem.getItemCount() + "x "));
-            				chatTrans.append(gtsListingItem.getTextComponent());
+            				chatTrans.append(gtsListingItem.createOrGetItemStack().getDisplayName());
         					chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " for " + TextFormatting.GOLD + (gtsListingItem.getListingPrice() - ((int)(gtsListingItem.getListingPrice() * GTSDataManager.getConfig().getGeneralTax()))) + TextFormatting.GREEN + "!" ));
         					targetPlayer.sendMessage(chatTrans, UUID.randomUUID());	
 							lstItemListingRemoval.add(gtsListingItem);
@@ -144,11 +144,11 @@ public class GTSTicker
 						ServerPlayerEntity targetPlayer = server.getPlayerList().getPlayer(gtsListingItem.getListingOwner());
 						if(targetPlayer != null)
 						{
-							if(targetPlayer.inventory.add(gtsListingItem.createOrGetItemStack()))
+							if(targetPlayer.inventory.add(gtsListingItem.createOrGetItemStack().copy()))
 	            			{
 								TranslationTextComponent chatTrans = new TranslationTextComponent("", new Object());
 								chatTrans.append(new StringTextComponent(TextFormatting.GRAY + "[" + TextFormatting.GOLD + "GTS" + TextFormatting.GRAY + "]" + TextFormatting.GREEN + " Your listing for " + TextFormatting.WHITE + gtsListingItem.getItemCount() + "x "));
-	            				chatTrans.append(gtsListingItem.getTextComponent());
+	            				chatTrans.append(gtsListingItem.createOrGetItemStack().getDisplayName());
 								chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " has expired!" ));
 								targetPlayer.sendMessage(chatTrans, UUID.randomUUID());
 								

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.UUID;
 
 import com.google.gson.Gson;
@@ -13,6 +14,7 @@ import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
 import com.varijon.tinies.SimplyGTS.object.GTSConfig;
 import com.varijon.tinies.SimplyGTS.object.GTSItemPriceHistory;
 import com.varijon.tinies.SimplyGTS.object.GTSListing;
+import com.varijon.tinies.SimplyGTS.object.GTSListingHistory;
 import com.varijon.tinies.SimplyGTS.object.GTSListingItem;
 import com.varijon.tinies.SimplyGTS.object.GTSListingPokemon;
 import com.varijon.tinies.SimplyGTS.object.GTSPriceHistoryList;
@@ -23,6 +25,7 @@ public class GTSDataManager
 	static ArrayList<GTSListingPokemon> lstListingDataPokemon = new ArrayList<GTSListingPokemon>();
 	static ArrayList<GTSListingItem> lstListingDataItems = new ArrayList<GTSListingItem>();
 	static ArrayList<GTSPriceHistoryList> lstPriceHistory = new ArrayList<GTSPriceHistoryList>();
+	static ArrayList<GTSListingHistory> lstListingHistory = new ArrayList<GTSListingHistory>();
 	static GTSConfig gtsConfig;
 	
 	public static boolean loadStorage()
@@ -31,6 +34,7 @@ public class GTSDataManager
         String source = basefolder + "/config/SimplyGTS/listings/pokemon";
         String source2 = basefolder + "/config/SimplyGTS/listings/items";
         String source3 = basefolder + "/config/SimplyGTS/pricehistory";
+        String source4 = basefolder + "/config/SimplyGTS/listings/history";
 		try
 		{
 			Gson gson = new Gson();
@@ -50,10 +54,16 @@ public class GTSDataManager
 			{
 				dir3.mkdirs();
 			}
+			File dir4 = new File(source4);
+			if(!dir4.exists())
+			{
+				dir4.mkdirs();
+			}
 			
 			lstListingDataPokemon.clear();
 			lstListingDataItems.clear();
 			lstPriceHistory.clear();
+			lstListingHistory.clear();
 			
 			for(File file : dir.listFiles())
 			{
@@ -82,6 +92,16 @@ public class GTSDataManager
 				lstPriceHistory.add(historyData);
 				reader.close();
 			}
+			for(File file : dir4.listFiles())
+			{
+				FileReader reader = new FileReader(file);
+				
+				GTSListingHistory listingHistory = gson.fromJson(reader, GTSListingHistory.class);
+								
+				lstListingHistory.add(listingHistory);
+				reader.close();
+			}
+			removeOldHistory();
 			return true;
 		}
 		catch(Exception ex)
@@ -149,7 +169,7 @@ public class GTSDataManager
 				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.ever_stone.getRegistryName().toString(), 50000, ""));
 				lstExampleMinPrice.add(new ItemConfigMinPrice(PixelmonItems.mint_adamant.getRegistryName().toString(), 50000, ""));
 				
-				GTSConfig gtsConfig = new GTSConfig(0, 0, 30000, 40000, 50000, 50000, 1000000, 50000, "3d", 8, 2.0, 0.20, 0.05,lstExampleMinPrice);
+				GTSConfig gtsConfig = new GTSConfig(0, 0, 30000, 40000, 50000, 50000, 1000000, 50000, "3d", 8, 30, 2.0, 0.20, 0.05,lstExampleMinPrice);
 		
 				Gson gson = new GsonBuilder().setPrettyPrinting().create();
 					
@@ -240,6 +260,31 @@ public class GTSDataManager
 		}
 	}
 	
+	public static void writeListingHistory(GTSListingHistory listingHistory)
+	{
+		String basefolder = new File("").getAbsolutePath();
+        String source = basefolder + "/config/SimplyGTS/listings/history";
+		
+		try
+		{
+			File dir = new File(source);
+			if(!dir.exists())
+			{
+				dir.mkdirs();
+			}
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+					
+			FileWriter writer = new FileWriter(source + "/" + listingHistory.getListingID() + ".json");
+			gson.toJson(listingHistory, writer);
+			writer.close();
+		}
+			
+		catch (Exception ex) 
+		{
+		    ex.printStackTrace();
+		}
+	}
+	
 	static void deleteGTSPokemonListing(GTSListingPokemon listingData)
 	{
 		String basefolder = new File("").getAbsolutePath();
@@ -284,6 +329,44 @@ public class GTSDataManager
 		{
 		    ex.printStackTrace();
 		}
+	}
+	
+	static void deleteGTSListingHistory(GTSListingHistory listingHistory)
+	{
+		String basefolder = new File("").getAbsolutePath();
+        String source = basefolder + "/config/SimplyGTS/listings/history";
+		
+		try
+		{
+			File dir = new File(source);
+			if(!dir.exists())
+			{
+				dir.mkdirs();
+			}
+			File deleteFile = new File(source + "/" + listingHistory.getListingID() + ".json");
+			deleteFile.delete();
+		}
+			
+		catch (Exception ex) 
+		{
+		    ex.printStackTrace();
+		}
+	}
+	
+	static void removeOldHistory()
+	{
+		ArrayList<GTSListingHistory> matches = new ArrayList<GTSListingHistory>();
+		long daysToKeep = (long)gtsConfig.getDaysToKeepHistory() * (long)86400000;
+		long currentTime = System.currentTimeMillis();
+		for(GTSListingHistory listingHistory : lstListingHistory)
+		{
+			if(currentTime >= listingHistory.getListingEnd() + daysToKeep)
+			{
+				matches.add(listingHistory);
+				deleteGTSListingHistory(listingHistory);
+			}
+		}
+		lstListingHistory.removeAll(matches);
 	}
 	
 	public static GTSListingPokemon getListingPokemonData(UUID listingID)
@@ -369,6 +452,13 @@ public class GTSDataManager
 		return historyList;
 	}
 	
+	public static GTSListingHistory addListingHistoryData(GTSListingHistory listingHistory)
+	{
+		lstListingHistory.add(listingHistory);
+		writeListingHistory(listingHistory);
+		return listingHistory;
+	}
+	
 	public static int getPlayerListingTotal(UUID player)
 	{
 		int listings = 0;
@@ -407,6 +497,19 @@ public class GTSDataManager
 			}
 		}
 		return lstAllListingsPlayer;
+	}
+	
+	public static ArrayList<GTSListingHistory> getAllListingHistoryPlayer(UUID player)
+	{
+		ArrayList<GTSListingHistory> lstAllPlayerHistory = new ArrayList<>();
+		for(GTSListingHistory listingHistory : lstListingHistory)
+		{
+			if(listingHistory.getListingOwner().equals(player))
+			{
+				lstAllPlayerHistory.add(listingHistory);
+			}
+		}
+		return lstAllPlayerHistory;
 	}
 //	public static void saveChangesToFile()
 //	{
@@ -478,4 +581,5 @@ public class GTSDataManager
 		}
 		return lstActive;
 	}
+	
 }

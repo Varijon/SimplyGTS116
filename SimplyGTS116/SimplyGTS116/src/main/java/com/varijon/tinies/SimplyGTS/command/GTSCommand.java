@@ -13,9 +13,11 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.pixelmonmod.pixelmon.Pixelmon;
+import com.pixelmonmod.pixelmon.api.command.PixelmonCommandUtils;
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.pokemon.stats.BattleStatsType;
 import com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage;
@@ -33,6 +35,7 @@ import com.varijon.tinies.SimplyGTS.command.subcommand.GTSShowListingSubcommand;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingType;
 import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
+import com.varijon.tinies.SimplyGTS.gui.GuiPagesHistory;
 import com.varijon.tinies.SimplyGTS.gui.GuiPagesItems;
 import com.varijon.tinies.SimplyGTS.gui.GuiPagesManage;
 import com.varijon.tinies.SimplyGTS.gui.GuiPagesPokemon;
@@ -51,6 +54,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.management.PlayerProfileCache;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
@@ -58,6 +62,7 @@ import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
+import net.minecraftforge.common.UsernameCache;
 import net.minecraftforge.server.permission.PermissionAPI;
 
 public class GTSCommand extends PixelCommand {
@@ -102,7 +107,38 @@ public class GTSCommand extends PixelCommand {
 			}
 			if(args[0].equals("history"))
 			{
-				UIManager.openUIForcefully(player, GuiPagesManage.getManageMenu(GTSDataManager.getAllListingsPlayer(player.getUUID()),player, 1));
+				if(args.length == 2)
+				{
+					if(PermissionAPI.hasPermission(player,"simplygts.moderate"))
+					{
+						UUID otherPlayerUUID = null;
+						
+						ServerPlayerEntity otherPlayer = sender.getServer().getPlayerList().getPlayerByName(args[1]);
+						if(otherPlayer == null)
+						{
+	        				GameProfile otherPlayerProfile = sender.getServer().getProfileCache().get(args[1]);	
+	        				if(otherPlayerProfile == null)
+	        				{
+	        					player.sendMessage(new StringTextComponent(TextFormatting.RED + "Player not found!"), UUID.randomUUID());
+	        					return;
+	        				}
+	        				otherPlayerUUID = otherPlayerProfile.getId();
+						}
+						else
+						{
+							otherPlayerUUID = otherPlayer.getUUID();
+						}
+        				
+						UIManager.openUIForcefully(player, GuiPagesHistory.getHistoryMenu(GTSDataManager.getAllListingHistoryPlayer(otherPlayerUUID),player, 1,otherPlayerUUID));
+						return;
+					}
+					else
+					{
+    					player.sendMessage(new StringTextComponent(TextFormatting.RED + "No permission to view other player history!"), UUID.randomUUID());	
+    					return;
+					}
+				}
+				UIManager.openUIForcefully(player, GuiPagesHistory.getHistoryMenu(GTSDataManager.getAllListingHistoryPlayer(player.getUUID()),player, 1, null));
 				return;
 			}
 			if(args[0].equals("items"))
@@ -162,7 +198,14 @@ public class GTSCommand extends PixelCommand {
 
 			return lstTabComplete;
 		}
-		if(args.length == 2)
+		if(args.length == 2 && args[0].equals("history"))
+		{
+			if(PermissionAPI.hasPermission(sender.getPlayerOrException(),"simplygts.moderate"))
+			{
+				return PixelmonCommandUtils.tabCompleteUsernames();
+			}
+		}
+		if(args.length == 2 && args[0].equals("sell"))
 		{
 			ArrayList<String> lstTabComplete = new ArrayList<>();
 			lstTabComplete.add("item");
@@ -170,7 +213,7 @@ public class GTSCommand extends PixelCommand {
 
 			return lstTabComplete;
 		}
-		if(args.length == 3)
+		if(args.length == 3 && args[0].equals("sell"))
 		{
 			ArrayList<String> lstTabComplete = new ArrayList<>();
 			if(args[1].equals("item"))
@@ -189,7 +232,7 @@ public class GTSCommand extends PixelCommand {
 
 			return lstTabComplete;
 		}
-		if(args.length == 4)
+		if(args.length == 4 && args[0].equals("sell"))
 		{
 			ArrayList<String> lstTabComplete = new ArrayList<>();
 			if(args[1].equals("pokemon"))
@@ -211,6 +254,7 @@ public class GTSCommand extends PixelCommand {
 		player.sendMessage(new StringTextComponent(TextFormatting.GREEN + "/gts pokemon " + TextFormatting.GOLD + "- Open Pokemon GTS window"), UUID.randomUUID());
 		player.sendMessage(new StringTextComponent(TextFormatting.GREEN + "/gts items " + TextFormatting.GOLD + "- Open Items GTS window"), UUID.randomUUID());
 		player.sendMessage(new StringTextComponent(TextFormatting.GREEN + "/gts manage " + TextFormatting.GOLD + "- Manage your GTS listings"), UUID.randomUUID());
+		player.sendMessage(new StringTextComponent(TextFormatting.GREEN + "/gts history " + TextFormatting.GOLD + "- View GTS listing history"), UUID.randomUUID());
 		player.sendMessage(new StringTextComponent(TextFormatting.GREEN + "/gts help " + TextFormatting.GOLD + "- Show this command help"), UUID.randomUUID());
 		player.sendMessage(new StringTextComponent(TextFormatting.GREEN + "/gts sell item/pokemon " + TextFormatting.GOLD + "- Sell items or Pokemon, price per item"), UUID.randomUUID());
 	}

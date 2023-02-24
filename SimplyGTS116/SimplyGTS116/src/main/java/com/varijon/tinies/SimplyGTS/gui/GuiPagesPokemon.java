@@ -14,7 +14,9 @@ import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
 import com.pixelmonmod.pixelmon.api.util.helpers.SpriteItemHelper;
 import com.varijon.tinies.SimplyGTS.SimplyGTS;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
+import com.varijon.tinies.SimplyGTS.enums.EnumListingType;
 import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
+import com.varijon.tinies.SimplyGTS.object.GTSListingHistory;
 import com.varijon.tinies.SimplyGTS.object.GTSListingItem;
 import com.varijon.tinies.SimplyGTS.object.GTSListingPokemon;
 import com.varijon.tinies.SimplyGTS.storage.GTSDataManager;
@@ -29,6 +31,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
@@ -229,6 +232,14 @@ public class GuiPagesPokemon
                 .display(new ItemStack(Blocks.WHITE_STAINED_GLASS_PANE,1))
                 .title("")
                 .build();
+
+
+		GTSListingPokemon gtsListingPokemonBuy = GTSDataManager.getListingPokemonData(listingID);
+		GooeyButton itemToBuy = GooeyButton.builder()
+                .display(SpriteItemHelper.getPhoto(gtsListingPokemonBuy.createOrGetPokemonData()))
+				.title(Util.getPokemonDisplayName((gtsListingPokemonBuy.createOrGetPokemonData())))
+				.lore(PokemonListingDisplay.getPokemonListingDisplayList(gtsListingPokemonBuy.createOrGetPokemonData(), player.getUUID(),gtsListingPokemonBuy,false))
+                .build();
 		
 		GooeyButton confirmButton = GooeyButton.builder()
                 .display(new ItemStack(Blocks.GREEN_STAINED_GLASS_PANE,1))
@@ -333,8 +344,8 @@ public class GuiPagesPokemon
         				gtsListingPokemon.setListingBuyer(action.getPlayer().getUUID());
         				GTSDataManager.writeListingPokemonData(gtsListingPokemon);
 
-
-
+        				GTSDataManager.addListingHistoryData(new GTSListingHistory(gtsListingPokemon, System.currentTimeMillis(), itemToBuy.getDisplay().serializeNBT().toString()));
+        				
         				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         			else
@@ -400,7 +411,6 @@ public class GuiPagesPokemon
         				gtsListingPokemon.setListingStatus(EnumListingStatus.Expired);
         				GTSDataManager.writeListingPokemonData(gtsListingPokemon);
 
-
         				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         			else
@@ -410,13 +420,6 @@ public class GuiPagesPokemon
         				UIManager.openUIForcefully(action.getPlayer(), getPokemonMenu(GTSDataManager.getGTSPokemonListings(), action.getPlayer(), page, EnumSortingOption.None));
         			}
         		})
-                .build();
-
-		GTSListingPokemon gtsListingPokemon = GTSDataManager.getListingPokemonData(listingID);
-		GooeyButton itemToBuy = GooeyButton.builder()
-                .display(SpriteItemHelper.getPhoto(gtsListingPokemon.createOrGetPokemonData()))
-				.title(Util.getPokemonDisplayName((gtsListingPokemon.createOrGetPokemonData())))
-				.lore(PokemonListingDisplay.getPokemonListingDisplayList(gtsListingPokemon.createOrGetPokemonData(), player.getUUID(),gtsListingPokemon,false))
                 .build();
 		
 

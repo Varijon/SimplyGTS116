@@ -2,12 +2,14 @@ package com.varijon.tinies.SimplyGTS.object;
 
 import java.util.UUID;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingType;
 
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
@@ -15,20 +17,14 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 public class GTSListingItem extends GTSListing
 {
-	String itemName;
-	String itemNBT;
-	int itemCount;
-	String itemTextComponent;
+	String itemAsNBT;
 	transient ItemStack itemStack;
 	public GTSListingItem(EnumListingType listingType, EnumListingStatus listingStatus, long listingStart,
-			long listingEnd, int listingPrice, UUID listingOwner, UUID listingID,String itemName, String itemNBT, int itemCount, String itemTextComponent) 
+			long listingEnd, int listingPrice, UUID listingOwner, UUID listingID, String itemAsNBT) 
 	{
 		super(listingType, listingStatus, listingStart, listingEnd, listingPrice, listingOwner, listingID, listingID);
 		
-		this.itemNBT = itemNBT;
-		this.itemName = itemName;
-		this.itemCount = itemCount;
-		this.itemTextComponent = itemTextComponent;
+		this.itemAsNBT = itemAsNBT;
 	}
 	
 	public ItemStack createOrGetItemStack()
@@ -40,18 +36,8 @@ public class GTSListingItem extends GTSListing
 		else
 		{
 			try {
-				if(itemNBT.equals(""))
-				{
-					this.itemStack = new ItemStack(ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(itemName)));
-					this.itemStack.setCount(this.itemCount);
-				}
-				else
-				{
-					this.itemStack = new ItemStack(ForgeRegistries.ITEMS.getValue(ResourceLocation.tryParse(itemName)));
-					this.itemStack.setTag(JsonToNBT.parseTag((itemNBT)));
-					this.itemStack.setCount(this.itemCount);
-				}
-			} catch (Exception e) {
+				itemStack = ItemStack.of(JsonToNBT.parseTag(itemAsNBT));
+			} catch (CommandSyntaxException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -59,40 +45,17 @@ public class GTSListingItem extends GTSListing
 		return itemStack;
 	}
 	
-	public ITextComponent getTextComponent()
+	public int getItemCount() 
 	{
-		return ITextComponent.Serializer.fromJson(this.itemTextComponent);
-	}
-	
-	public String getItemNBT() {
-		return itemNBT;
-	}
-	public void setItemNBT(String itemNBT) {
-		this.itemNBT = itemNBT;
-	}
-	public int getItemCount() {
-		return itemCount;
+		return createOrGetItemStack().getCount();
 	}
 	public void setItemCount(int itemCount) {
-		this.itemCount = itemCount;
-	}
-//	public ItemStack getItemStack() {
-//		return itemStack;
-//	}
-	public void setItemStack(ItemStack itemStack) {
-		this.itemStack = itemStack;
+		createOrGetItemStack().setCount(itemCount);
 	}
 
-	public String getItemName() {
-		return itemName;
-	}
-
-	public void setItemName(String itemName) {
-		this.itemName = itemName;
-	}
-
-	public ItemStack getItemStack() {
-		return itemStack;
+	public String getItemName()
+	{
+		return createOrGetItemStack().getItem().getRegistryName().toString();
 	}
 	
 	public String getItemHoverName()

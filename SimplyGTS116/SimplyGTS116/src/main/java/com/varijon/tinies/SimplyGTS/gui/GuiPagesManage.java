@@ -3,6 +3,7 @@ package com.varijon.tinies.SimplyGTS.gui;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import com.pixelmonmod.pixelmon.api.registries.PixelmonItems;
 import com.pixelmonmod.pixelmon.api.util.helpers.SpriteItemHelper;
 import com.varijon.tinies.SimplyGTS.enums.EnumListingStatus;
 import com.varijon.tinies.SimplyGTS.object.GTSListing;
@@ -18,6 +19,7 @@ import ca.landonjw.gooeylibs2.api.template.types.ChestTemplate;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 
@@ -45,7 +47,7 @@ public class GuiPagesManage
 					itemButton = GooeyButton.builder()
 							.display(ItemListingDisplay.getItemListingDisplay(itemListing.createOrGetItemStack(), player.getUUID(),itemListing, false))
 							.title(itemListing.createOrGetItemStack().getHoverName())
-							.lore(ItemListingDisplay.getItemListingDisplayList(itemListing.createOrGetItemStack(), player.getUUID(),itemListing, false))
+							.lore(ITextComponent.class,ItemListingDisplay.getItemListingDisplayList(itemListing.createOrGetItemStack(), player.getUUID(),itemListing, false))
 							.onClick((action) -> 
 							{
 								if(action.getButton().getDisplay() != null)
@@ -133,6 +135,19 @@ public class GuiPagesManage
    					UIManager.openUIForcefully(action.getPlayer(), getManageMenu(GTSDataManager.getAllListingsPlayer(player.getUUID()), action.getPlayer(), page+1));
         		})
                 .build();
+        
+        ItemStack historyDisplay = new ItemStack(PixelmonItems.silver_hourglass);
+        historyDisplay.getOrCreateTag().putString("tooltip", "");
+    	
+        GooeyButton switchToHistoryButton = GooeyButton.builder()
+                .display(historyDisplay)
+                .title(TextFormatting.GOLD + "Click to view history")
+                .onClick((action) -> 
+        		{
+       				UIManager.closeUI(action.getPlayer());
+   					UIManager.openUIForcefully(action.getPlayer(), GuiPagesHistory.getHistoryMenu(GTSDataManager.getAllListingHistoryPlayer(player.getUUID()), action.getPlayer(), 1, null));
+        		})
+                .build();
         if(page != 1)
         {
 	        templateBuilder
@@ -144,6 +159,7 @@ public class GuiPagesManage
             templateBuilder
             	.set(5, 8, forwardPageButton);
         }
+        templateBuilder.set(5, 4, switchToHistoryButton);
         
 		ChestTemplate template = templateBuilder
                 .build();

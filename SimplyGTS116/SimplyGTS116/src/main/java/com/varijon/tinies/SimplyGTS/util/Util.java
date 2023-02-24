@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import com.pixelmonmod.pixelmon.api.pokemon.Pokemon;
 import com.pixelmonmod.pixelmon.api.pokemon.item.pokeball.PokeBall;
@@ -27,6 +28,7 @@ import com.pixelmonmod.pixelmon.entities.npcs.registry.ShopItemWithVariation;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.ShopkeeperData;
 import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
 import com.varijon.tinies.SimplyGTS.object.GTSItemPriceHistory;
+import com.varijon.tinies.SimplyGTS.object.GTSListingHistory;
 import com.varijon.tinies.SimplyGTS.object.GTSListingItem;
 import com.varijon.tinies.SimplyGTS.object.GTSListingPokemon;
 import com.varijon.tinies.SimplyGTS.object.GTSPriceHistoryList;
@@ -44,11 +46,13 @@ import net.minecraft.nbt.INBT;
 import net.minecraft.nbt.ListNBT;
 import net.minecraft.nbt.NBTUtil;
 import net.minecraft.nbt.StringNBT;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.util.text.event.ClickEvent;
 import net.minecraft.util.text.event.HoverEvent;
+import net.minecraftforge.common.UsernameCache;
 import net.minecraftforge.common.util.Constants;
 
 public class Util 
@@ -537,7 +541,7 @@ public class Util
 		GTSItemPriceHistory priceHistory = priceHistoryList.getItemPriceHistory(gtsListingItem.createOrGetItemStack());
 		if(priceHistory == null)
 		{
-			priceHistory = priceHistoryList.addPriceHistory(new GTSItemPriceHistory(0, 0, gtsListingItem.getItemNBT()));
+			priceHistory = priceHistoryList.addPriceHistory(new GTSItemPriceHistory(0, 0, gtsListingItem.createOrGetItemStack().getOrCreateTag().toString()));
 		}
 		priceHistory.setNumberSold(priceHistory.getNumberSold() + gtsListingItem.getItemCount());
 		priceHistory.setTotalSpent(priceHistory.getTotalSpent() + gtsListingItem.getListingPrice());
@@ -672,5 +676,36 @@ public class Util
         }
         
         return returnItem;
+	}
+	
+	public static ArrayList<ITextComponent> replaceWithHistoryLines(ArrayList<ITextComponent> lstLore, GTSListingHistory listingHistory)
+	{
+		String buyerName = UsernameCache.getLastKnownUsername(listingHistory.getListingBuyer());
+
+		if(buyerName == null)
+		{
+			buyerName = "Someone";
+		}
+		
+		lstLore.set(0, new StringTextComponent(TextFormatting.RED + "Buyer: " + TextFormatting.GOLD + buyerName));
+		lstLore.set(1, new StringTextComponent(TextFormatting.RED + "Price: " + TextFormatting.GOLD + listingHistory.getListingPrice()));
+		lstLore.set(2, new StringTextComponent(TextFormatting.RED + "Sold: " + TextFormatting.GOLD + DurationFormatUtils.formatDuration((System.currentTimeMillis() - listingHistory.getListingEnd()),"dd'd 'HH'h 'mm'm 'ss's'", false) + " ago"));
+		return lstLore;
+	}
+	
+	public static ArrayList<ITextComponent> getItemStackLore(ItemStack itemStack)
+	{
+		CompoundNBT itemNBT = itemStack.getTag();
+		CompoundNBT displayNBT = itemNBT.getCompound("display");
+		ListNBT loreList = displayNBT.getList("Lore", Constants.NBT.TAG_STRING);
+		
+		ArrayList<ITextComponent> newLoreList = new ArrayList<ITextComponent>();
+		
+		for(INBT loreString : loreList)
+		{
+			newLoreList.add(ITextComponent.Serializer.fromJson(loreString.getAsString()));
+		}
+		
+		return newLoreList;
 	}
 }

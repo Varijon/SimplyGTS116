@@ -60,7 +60,7 @@ public class GTSSellItemSubCommand
 			return;
 		}
 		
-		ItemStack itemToSell = player.getMainHandItem();
+		ItemStack itemToSell = player.getMainHandItem().copy();
 		int cost = 0;
 		if(args.length == 2)
 		{
@@ -113,7 +113,7 @@ public class GTSSellItemSubCommand
 		
 		
 		UUID listingUUID = UUID.randomUUID();
-		GTSListingItem listingData = GTSDataManager.addListingItemsData(new GTSListingItem(EnumListingType.Item, EnumListingStatus.Active, System.currentTimeMillis(), System.currentTimeMillis() + Util.parsePeriod(GTSDataManager.getConfig().getListingDuration()), cost*itemToSell.getCount(), player.getUUID(), listingUUID, itemToSell.getItem().getRegistryName().toString(),itemToSell.hasTag() ? itemToSell.getTag().toString() : "", itemToSell.getCount(),ITextComponent.Serializer.toJson(itemToSell.getDisplayName())));
+		GTSListingItem listingData = GTSDataManager.addListingItemsData(new GTSListingItem(EnumListingType.Item, EnumListingStatus.Active, System.currentTimeMillis(), System.currentTimeMillis() + Util.parsePeriod(GTSDataManager.getConfig().getListingDuration()), cost*itemToSell.getCount(), player.getUUID(), listingUUID, itemToSell.serializeNBT().toString()));
 		SimplyGTS.logger.info(player.getName().getString() + " listed " + itemToSell.getCount() + "x " + listingData.getItemName() + " for " + listingData.getListingPrice());
 		GTSDataManager.writeListingItemsData(listingData);
 		
