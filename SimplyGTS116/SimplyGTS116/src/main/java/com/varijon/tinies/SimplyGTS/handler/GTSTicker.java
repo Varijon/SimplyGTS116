@@ -104,7 +104,7 @@ public class GTSTicker
 							partyOwner.add(gtsListingPokemon.createOrGetPokemonData());
 							partyOwner.setNeedsSaving();
 							
-	        				SimplyGTS.logger.info(targetPlayer.getName() + " had their listing for " + gtsListingPokemon.createOrGetPokemonData().getDisplayName()  + " for " + gtsListingPokemon.getListingPrice() + " expire");     
+	        				SimplyGTS.logger.info(targetPlayer.getName().getString() + " had their listing for " + gtsListingPokemon.createOrGetPokemonData().getDisplayName()  + " for " + gtsListingPokemon.getListingPrice() + " expire");     
 
 							
 							lstPokemonListingRemoval.add(gtsListingPokemon);
@@ -152,7 +152,7 @@ public class GTSTicker
 								chatTrans.append(new StringTextComponent(TextFormatting.GREEN + " has expired!" ));
 								targetPlayer.sendMessage(chatTrans, UUID.randomUUID());
 								
-		        				SimplyGTS.logger.info(targetPlayer.getName() + " had their listing for " + gtsListingItem.getItemCount() + "x " + gtsListingItem.getItemName()  + " for " + gtsListingItem.getListingPrice() + " expire");     
+		        				SimplyGTS.logger.info(targetPlayer.getName().getString() + " had their listing for " + gtsListingItem.getItemCount() + "x " + gtsListingItem.getItemName()  + " for " + gtsListingItem.getListingPrice() + " expire");     
 								
 								lstItemListingRemoval.add(gtsListingItem);
 	            			} 

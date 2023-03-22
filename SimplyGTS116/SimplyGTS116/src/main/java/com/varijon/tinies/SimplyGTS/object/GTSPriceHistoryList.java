@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.JsonToNBT;
+import net.minecraft.nbt.NBTUtil;
 
 public class GTSPriceHistoryList 
 {
@@ -50,7 +51,7 @@ public class GTSPriceHistoryList
 			else
 			{
 				try {
-					if(item.getTag().equals(JsonToNBT.parseTag(priceHistory.itemNBT)))
+					if(NBTUtil.compareNbt(item.getTag(), JsonToNBT.parseTag(priceHistory.itemNBT), true))
 					{
 						return priceHistory;
 					}

@@ -89,7 +89,11 @@ public class GTSPriceCheckCommand extends PixelCommand {
 			if(shopItem != null)
 			{
 				shopBuyPrice = shopItem.getBuyCost();
-				shopSellPrice = shopItem.getSellCost();
+			}
+			ShopItemWithVariation shopItem2 = Util.getSellPrice(itemToSell);
+			if(shopItem2 != null)
+			{
+				shopSellPrice = shopItem2.getSellCost();
 			}
 			
 			player.sendMessage(new StringTextComponent(TextFormatting.YELLOW + "Prices for: " + TextFormatting.GOLD + itemToSell.getHoverName().getString()), UUID.randomUUID());

@@ -23,7 +23,10 @@ import com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage;
 import com.pixelmonmod.pixelmon.api.storage.StorageProxy;
 import com.pixelmonmod.pixelmon.api.util.helpers.SpriteItemHelper;
 import com.pixelmonmod.pixelmon.battles.attacks.Attack;
+import com.pixelmonmod.pixelmon.entities.npcs.NPCShopkeeper;
+import com.pixelmonmod.pixelmon.entities.npcs.registry.BaseShopItem;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.ServerNPCRegistry;
+import com.pixelmonmod.pixelmon.entities.npcs.registry.ShopItem;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.ShopItemWithVariation;
 import com.pixelmonmod.pixelmon.entities.npcs.registry.ShopkeeperData;
 import com.varijon.tinies.SimplyGTS.enums.EnumSortingOption;
@@ -501,34 +504,36 @@ public class Util
 			{
 				if(shopItemVar.getItemStack().getItem() == itemToSell.getItem())
 				{
-					if(itemToSell.getDamageValue() == shopItemVar.getItemStack().getDamageValue())
+					if(itemToSell.getTag() != null && shopItemVar.getItemStack().getTag() != null)
 					{
-						if(itemToSell.hasTag() && shopItemVar.getItemStack().hasTag())
+						if(NBTUtil.compareNbt(itemToSell.getTag(), shopItemVar.getItemStack().getTag(), true))
 						{
-							if(itemToSell.getTag().contains("tm"))
-							{
-								if(itemToSell.getTag().getInt("tm") == shopItemVar.getItemStack().getTag().getInt("tm"))
-								{
-									shopItem = shopItemVar;
-									break;
-								}
-							}
-							if(itemToSell.getTag().equals(shopItemVar.getItemStack().getTag()))
-							{
-								shopItem = shopItemVar;		
-								break;											
-							}
+							shopItem = shopItemVar;		
+							break;											
 						}
-						else
-						{
-							shopItem = shopItemVar;
-							break;
-						}
+					}
+					else
+					{
+						shopItem = shopItemVar;
+						break;
 					}
 				}
 			}
 		}
 		return shopItem;
+	}
+	
+	public static ShopItemWithVariation getSellPrice(ItemStack itemToSell)
+	{
+		ShopItemWithVariation returnItem = null;
+
+		BaseShopItem shopItem = ServerNPCRegistry.shopkeepers.getItem(itemToSell);
+		if(shopItem != null)
+		{
+			returnItem = new ShopItemWithVariation(new ShopItem(ServerNPCRegistry.shopkeepers.getItem(itemToSell), 0, 0, false));			
+		}
+		
+		return returnItem;
 	}
 	
 	public static void registerPriceHistory(GTSListingItem gtsListingItem)
