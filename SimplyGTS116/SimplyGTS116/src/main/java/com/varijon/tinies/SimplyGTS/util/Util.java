@@ -302,7 +302,7 @@ public class Util
 	{
 		if(pixelmon.getMintNature() != null)
 		{
-			return TextFormatting.WHITE + " (" + TextFormatting.GRAY + pixelmon.getBaseNature().name() + TextFormatting.WHITE + ")"; 
+			return TextFormatting.WHITE + " (" + TextFormatting.GRAY + pixelmon.getBaseNature().getLocalizedName() + TextFormatting.WHITE + ")"; 
 		}
 		return "";
 	}
@@ -504,7 +504,7 @@ public class Util
 			{
 				if(shopItemVar.getItemStack().getItem() == itemToSell.getItem())
 				{
-					if(itemToSell.getTag() != null && shopItemVar.getItemStack().getTag() != null)
+					if(itemToSell.getTag() != null || shopItemVar.getItemStack().getTag() != null)
 					{
 						if(NBTUtil.compareNbt(itemToSell.getTag(), shopItemVar.getItemStack().getTag(), true))
 						{

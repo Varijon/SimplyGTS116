@@ -73,7 +73,14 @@ public class ItemListingDisplay
 		
 		for(INBT loreString : loreList)
 		{
-			newLoreList.add(StringNBT.valueOf(ITextComponent.Serializer.fromJson(loreString.getAsString()).getString()));
+			try
+			{
+				newLoreList.add(StringNBT.valueOf(ITextComponent.Serializer.fromJson(loreString.getAsString()).getString()));				
+			}
+			catch(Exception ex)
+			{
+				newLoreList.add(StringNBT.valueOf(new StringTextComponent(loreString.getAsString()).getString()));	
+			}
 		}
 		displayNBT.put("Lore", newLoreList);
 		itemNBT.put("display", displayNBT);
@@ -131,7 +138,14 @@ public class ItemListingDisplay
 		
 		for(INBT loreString : loreList)
 		{
-			newLoreList.add(ITextComponent.Serializer.fromJson(loreString.getAsString()));
+			try
+			{
+				newLoreList.add(ITextComponent.Serializer.fromJson(loreString.getAsString()));
+			}
+			catch(Exception ex)
+			{
+				newLoreList.add(new StringTextComponent(loreString.getAsString()));				
+			}
 		}
 		
 		return newLoreList;
